@@ -115,7 +115,6 @@ body.parent-mode .tab-btn span {
 
 /* Mobile navigation tab strip (horizontal scrolling on small screens) */
 #main-nav {
-    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
 #main-nav::-webkit-scrollbar {

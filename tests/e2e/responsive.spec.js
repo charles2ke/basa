@@ -1,6 +1,8 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
 
+const TABS = ["overview", "scheduler", "vitals", "careteam", "vault", "geofence", "wellness"];
+
 const VIEWPORTS = [
   { name: "mobile", width: 375, height: 667 },
   { name: "tablet", width: 768, height: 1024 },
@@ -29,8 +31,7 @@ test.describe("basa - Responsive layout", () => {
       await page.goto("/");
       test.skip(!(await isTailwindLoaded(page)), "Tailwind CDN unavailable in this environment");
 
-      const tabs = ["overview", "scheduler", "vitals", "careteam", "vault", "geofence", "wellness"];
-      for (const tab of tabs) {
+      for (const tab of TABS) {
         await page.click(`button[data-tab='${tab}']`);
         await expect(page.locator(`#panel-${tab}`)).toBeVisible();
         expect(await hasHorizontalOverflow(page), `overflow on ${tab} tab`).toBe(false);
@@ -43,7 +44,7 @@ test.describe("basa - Responsive layout", () => {
     await page.goto("/");
 
     // Every navigation entry is present and can be activated on mobile
-    for (const tab of ["scheduler", "vitals", "wellness", "overview"]) {
+    for (const tab of TABS) {
       const btn = page.locator(`button[data-tab='${tab}']`);
       await expect(btn).toBeVisible();
       await btn.click();
