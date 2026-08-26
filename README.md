@@ -5,26 +5,26 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 <!-- LIVE_DEMO_START -->
 🚀 **Live site:** https://charles2ke.github.io/basa/
 
-**Latest deployment run:** https://github.com/charles2ke/basa/actions/runs/33017230050
+**Latest deployment run:** https://github.com/charles2ke/basa/actions/runs/33018423940
 <!-- LIVE_DEMO_END -->
 
 ## CI/CD Status
 <!-- BUILD_STATUS_START -->
 ![Build Status](https://github.com/charles2ke/basa/actions/workflows/ci.yml/badge.svg)
 
-**Last Automated Update:** Wed, 26 Aug 2026 21:51:46 GMT
+**Last Automated Update:** Wed, 26 Aug 2026 22:09:58 GMT
 <!-- BUILD_STATUS_END -->
 
 ## Test Coverage Metrics
 <!-- COVERAGE_START -->
-![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-98.96%25-brightgreen)
 
 | Metric | Total | Covered | Percentage |
 | :--- | :---: | :---: | :---: |
-| **Lines** | 873 | 873 | 100% |
-| **Statements** | 927 | 923 | 99.56% |
-| **Functions** | 106 | 104 | 98.11% |
-| **Branches** | 373 | 339 | 90.88% |
+| **Lines** | 965 | 955 | 98.96% |
+| **Statements** | 1025 | 1010 | 98.53% |
+| **Functions** | 116 | 114 | 98.27% |
+| **Branches** | 427 | 376 | 88.05% |
 <!-- COVERAGE_END -->
 
 ## Features
