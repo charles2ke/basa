@@ -2,4 +2,3 @@ node_modules/
 playwright-report/
 playwright-results/
 .last-run.json
-package-lock.json
