@@ -1,0 +1,13 @@
+{
+  "name": "basa",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "serve": "serve -l 8080"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "serve": "^14.2.4"
+  }
+}

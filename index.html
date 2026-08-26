@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>basa - Home & Parent Care Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+    <!-- Top Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center">
+                <!-- Home Icon SVG -->
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-gray-900 flex items-center">
+                    basa <span class="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Home, Ghar, Bari</span>
+                </h1>
+                <p class="text-xs text-gray-500">Aging Parent Care & Safety Hub</p>
+            </div>
+        </div>
+
+        <!-- Center Notification Badge / Status Indicator -->
+        <div class="flex items-center space-x-4">
+            <div id="parent-status-badge" class="flex items-center bg-green-50 text-green-700 border border-green-200 px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-all duration-300">
+                <span class="w-2.5 h-2.5 bg-green-500 rounded-full mr-2 animate-pulse" id="parent-status-dot"></span>
+                Parent Status: <span id="parent-status-text" class="ml-1">Safe at Home</span>
+            </div>
+            <div id="ambient-alert-badge" class="hidden flex items-center bg-yellow-50 text-yellow-700 border border-yellow-200 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300">
+                <span class="w-2.5 h-2.5 bg-yellow-500 rounded-full mr-2 animate-pulse"></span>
+                IoT Status: <span id="ambient-alert-text" class="ml-1">No Activity Warning</span>
+            </div>
+        </div>
+
+        <!-- Right Side: View Mode Switcher and Quick SOS -->
+        <div class="flex items-center space-x-4">
+            <!-- View Selector Toggle -->
+            <div class="bg-gray-100 p-0.5 rounded-lg flex items-center border border-gray-200">
+                <button id="btn-view-child" class="px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm bg-white text-indigo-600 transition-all duration-200">
+                    Child View
+                </button>
+                <button id="btn-view-parent" class="px-3 py-1.5 text-xs font-semibold rounded-md text-gray-600 hover:text-gray-800 transition-all duration-200">
+                    Parent View
+                </button>
+            </div>
+
+            <!-- Header SOS Panic Trigger -->
+            <button id="btn-quick-sos" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-md animate-bounce hover:animate-none flex items-center space-x-1.5 transition duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <span>SOS PANIC</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex-grow flex flex-col md:flex-row">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="bg-white w-full md:w-64 border-r border-gray-200 flex flex-col justify-between shrink-0 shadow-sm z-30">
+            <div class="p-4 space-y-1">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Main Navigation</p>
+                <nav class="space-y-1">
+                    <button data-tab="overview" class="tab-btn active w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path></svg>
+                        <span>Dashboard Overview</span>
+                    </button>
+                    <button data-tab="scheduler" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>Medication & Routines</span>
+                    </button>
+                    <button data-tab="vitals" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2"></path></svg>
+                        <span>Vitals Tracker</span>
+                    </button>
+                    <button data-tab="careteam" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <span>Care Team Hub</span>
+                    </button>
+                    <button data-tab="vault" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <span>Medical Vault</span>
+                    </button>
+                    <button data-tab="geofence" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span>Geofence Alerts</span>
+                    </button>
+                    <button data-tab="wellness" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        <span>Wellness & Voice</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Info / Bottom Stats -->
+            <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+                <div class="text-xs text-gray-600">
+                    <p class="font-bold">Home Ambient Stats</p>
+                    <div class="mt-1 flex justify-between">
+                        <span>Temperature:</span>
+                        <span id="side-ambient-temp" class="font-semibold text-gray-900">22.5 °C</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Luminosity:</span>
+                        <span id="side-ambient-light" class="font-semibold text-gray-900">350 lx</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Activity Status:</span>
+                        <span id="side-ambient-activity" class="text-green-600 font-semibold">Active</span>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-gray-200 text-center text-[10px] text-gray-400 font-mono">
+                    basa parent-care v1.0.0
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Contents -->
+        <main class="flex-grow p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+            <!-- Global Flash Banner for Emergencies -->
+            <div id="flash-emergency-banner" class="hidden bg-red-600 border border-red-800 text-white rounded-xl p-4 mb-6 shadow-lg animate-pulse flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-red-800 p-2 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">EMERGENCY ACTIVATED!</h3>
+                        <p class="text-xs text-red-100">SOS Triggered. Family notified. GPS Location: <span id="sos-gps-text">Kathmandu, Nepal</span></p>
+                    </div>
+                </div>
+                <div>
+                    <button id="btn-resolve-sos" class="bg-white hover:bg-gray-100 text-red-700 font-bold px-4 py-2 rounded-lg text-sm shadow-sm transition">
+                        Resolve / Reset Status
+                    </button>
+                </div>
+            </div>
+
+            <!-- View Modes Parent Notice -->
+            <div id="parent-view-banner" class="hidden bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-xl p-4 mb-6 flex items-center justify-between">
+                <div>
+                    <h3 class="font-semibold text-sm">Large Accessibility (Parent Mode)</h3>
+                    <p class="text-xs text-indigo-600">Interface scaled up and simplified for easy elder interaction.</p>
+                </div>
+                <button id="btn-back-to-child" class="text-xs text-indigo-700 underline font-semibold">Switch to Child View</button>
+            </div>
+
+            <!-- Tab Panels -->
+            
+            <!-- Tab: Dashboard Overview -->
+            <section id="panel-overview" class="tab-panel space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Column 1: Fast Status & Action Card -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-gray-900 text-lg">Quick SOS Control</h3>
+                                <span class="px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Critical</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Direct alert broadcast and GPS simulation</p>
+                            <div class="my-6 flex justify-center">
+                                <button id="btn-dashboard-sos" class="w-36 h-36 rounded-full bg-red-600 hover:bg-red-700 text-white font-black text-xl shadow-xl flex flex-col items-center justify-center space-y-1 transition duration-200 cursor-pointer outline-none ring-4 ring-red-100 border-4 border-red-500">
+                                    <span>EMERGENCY</span>
+                                    <span class="text-[10px] uppercase font-normal tracking-wide bg-red-800 px-2 py-0.5 rounded-full animate-pulse">Press Button</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-xs">
+                            <span class="font-semibold text-gray-700">Last SOS Alert:</span>
+                            <span id="overview-last-sos-time" class="text-gray-500 float-right">Never</span>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Medication Summary Card -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-gray-900 text-lg">Routine Check-in</h3>
+                                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Daily schedule</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Interactive checklist completion tracking</p>
+                            
+                            <!-- Progress Bar -->
+                            <div class="mt-4">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>Overall Completion</span>
+                                    <span id="overview-routine-progress-pct" class="font-semibold text-indigo-600">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                    <div id="overview-routine-progress-bar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- List of today's routines (first 3) -->
+                            <div id="overview-routine-list" class="space-y-3 mt-4">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                        <button onclick="switchTab('scheduler')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 mt-4 flex items-center">
+                            Manage all routines &rarr;
+                        </button>
+                    </div>
+
+                    <!-- Column 3: Live Ambient IoT Card -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-gray-900 text-lg">Smart Ambient Sensors</h3>
+                                <span class="px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Telemetry</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">IoT home status and anomaly logs</p>
+
+                            <div class="grid grid-cols-2 gap-3 mt-4">
+                                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-col justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-gray-400">Kitchen</span>
+                                    <span id="sensor-kitchen" class="text-xs font-semibold text-gray-700 mt-1">Motion: 2m ago</span>
+                                </div>
+                                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-col justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-gray-400">Bedroom</span>
+                                    <span id="sensor-bedroom" class="text-xs font-semibold text-gray-700 mt-1">Temp: 22.1 °C</span>
+                                </div>
+                                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-col justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-gray-400">Bathroom</span>
+                                    <span id="sensor-bathroom" class="text-xs font-semibold text-gray-700 mt-1">Motion: 30m ago</span>
+                                </div>
+                                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex flex-col justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-gray-400">Living Room</span>
+                                    <span id="sensor-living" class="text-xs font-semibold text-gray-700 mt-1">Humidity: 45%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="switchTab('wellness')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 mt-4 flex items-center">
+                            Wellness details & Voice Control &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Vitals & Geofence Quick Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Vitals Quick Cards -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-gray-900 text-lg">Latest Health Vitals</h3>
+                            <button onclick="switchTab('vitals')" class="text-xs font-semibold text-indigo-600 hover:underline">Vitals Hub</button>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="p-3 bg-red-50 text-red-900 rounded-xl border border-red-100">
+                                <p class="text-[10px] uppercase font-bold text-red-500">Blood Pressure</p>
+                                <p id="ov-vital-bp" class="text-lg font-extrabold mt-1">120/80</p>
+                                <p class="text-[9px] text-red-600">mmHg (Normal)</p>
+                            </div>
+                            <div class="p-3 bg-indigo-50 text-indigo-900 rounded-xl border border-indigo-100">
+                                <p class="text-[10px] uppercase font-bold text-indigo-500">Heart Rate</p>
+                                <p id="ov-vital-pulse" class="text-lg font-extrabold mt-1">72</p>
+                                <p class="text-[9px] text-indigo-600">bpm (Normal)</p>
+                            </div>
+                            <div class="p-3 bg-green-50 text-green-900 rounded-xl border border-green-100">
+                                <p class="text-[10px] uppercase font-bold text-green-500">Blood Glucose</p>
+                                <p id="ov-vital-glucose" class="text-lg font-extrabold mt-1">98</p>
+                                <p class="text-[9px] text-green-600">mg/dL (Fasting)</p>
+                            </div>
+                            <div class="p-3 bg-orange-50 text-orange-900 rounded-xl border border-orange-100">
+                                <p class="text-[10px] uppercase font-bold text-orange-500">Body Temp</p>
+                                <p id="ov-vital-temp" class="text-lg font-extrabold mt-1">36.6</p>
+                                <p class="text-[9px] text-orange-600">°C (Normal)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Geofencing Quick Card -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-gray-900 text-lg">Safe Geofence Range</h3>
+                            <button onclick="switchTab('geofence')" class="text-xs font-semibold text-indigo-600 hover:underline">Map details</button>
+                        </div>
+                        <div class="flex items-center space-x-4 my-2">
+                            <div class="w-16 h-16 bg-blue-50 border border-blue-200 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                                100m
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900" id="ov-geofence-status">Parent inside safe range</p>
+                                <p class="text-xs text-gray-500">Safe Zone center: Parent's house ("Basa"). Radius alert active.</p>
+                            </div>
+                        </div>
+                        <div class="text-xs bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex items-center justify-between">
+                            <span>Current coordinates:</span>
+                            <span id="ov-geofence-coords" class="font-mono text-gray-600 text-[10px]">27.7172° N, 85.3240° E</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Activities Timeline -->
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-gray-900 text-lg mb-4">Live Activity Log</h3>
+                    <div id="overview-log-timeline" class="space-y-4 max-h-60 overflow-y-auto">
+                        <!-- Populated dynamically with safety, vitals, routines activities -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Medication & Routine Scheduler -->
+            <section id="panel-scheduler" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form to add routines -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Add Routine/Medication</h3>
+                        <form id="routine-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Routine Name</label>
+                                <input id="routine-name" type="text" placeholder="e.g. Amlodipine (Blood Pressure)" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Scheduled Time</label>
+                                    <input id="routine-time" type="time" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Category</label>
+                                    <select id="routine-category" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                        <option value="medication">💊 Medication</option>
+                                        <option value="routine">💡 Daily Routine</option>
+                                        <option value="therapy">🏃 Physical Therapy</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Instruction / Dosage</label>
+                                <input id="routine-dosage" type="text" placeholder="e.g. 5mg, take after breakfast" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                Add to Daily Schedule
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Daily routine checklist and interactive logs -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-2 space-y-6">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg">Daily Schedule & Check-ins</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Track routine safety schedules and confirm completions.</p>
+                        </div>
+
+                        <!-- Scheduled items interactive checklist -->
+                        <div id="scheduler-items-container" class="space-y-3">
+                            <!-- Dynamic items with complete buttons -->
+                        </div>
+
+                        <!-- Completed history log -->
+                        <div class="pt-6 border-t border-gray-100">
+                            <h4 class="font-semibold text-gray-900 text-sm mb-3">Today's Activity Log</h4>
+                            <div id="scheduler-history-log" class="space-y-2 max-h-48 overflow-y-auto">
+                                <!-- list of completed logs with child notification badges -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Vitals Tracker -->
+            <section id="panel-vitals" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Manual input form -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Log Daily Vitals</h3>
+                        <form id="vitals-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Blood Pressure (mmHg)</label>
+                                <div class="flex items-center space-x-2">
+                                    <input id="vital-systolic" type="number" placeholder="Systolic (e.g. 120)" required class="w-1/2 bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2 text-sm transition">
+                                    <span class="text-gray-400">/</span>
+                                    <input id="vital-diastolic" type="number" placeholder="Diastolic (e.g. 80)" required class="w-1/2 bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2 text-sm transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Pulse Rate (bpm)</label>
+                                <input id="vital-pulse" type="number" placeholder="e.g. 72" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Blood Glucose (mg/dL)</label>
+                                <input id="vital-glucose" type="number" placeholder="e.g. 98" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Body Temp (°C)</label>
+                                <input id="vital-temp" type="number" step="0.1" placeholder="e.g. 36.6" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                Save Vital Log
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Interactive SVG Charts and Log Lists -->
+                    <div class="lg:col-span-3 space-y-6">
+                        <!-- Chart container -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                            <div class="flex items-center justify-between flex-wrap gap-3">
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-lg">Vital Trend Analysis</h3>
+                                    <p class="text-xs text-gray-500">Visual trend graphing of logged biological health metrics.</p>
+                                </div>
+                                <div class="flex space-x-1.5 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+                                    <button onclick="renderVitalsChart('bp')" id="chart-tab-bp" class="px-3 py-1 text-xs font-medium rounded-md bg-white text-indigo-600 shadow-sm transition">BP</button>
+                                    <button onclick="renderVitalsChart('pulse')" id="chart-tab-pulse" class="px-3 py-1 text-xs font-medium rounded-md text-gray-600 hover:text-gray-800 transition">Pulse</button>
+                                    <button onclick="renderVitalsChart('glucose')" id="chart-tab-glucose" class="px-3 py-1 text-xs font-medium rounded-md text-gray-600 hover:text-gray-800 transition">Glucose</button>
+                                    <button onclick="renderVitalsChart('temp')" id="chart-tab-temp" class="px-3 py-1 text-xs font-medium rounded-md text-gray-600 hover:text-gray-800 transition">Temp</button>
+                                </div>
+                            </div>
+
+                            <!-- SVG Render Canvas -->
+                            <div class="relative w-full h-64 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex flex-col justify-center items-center">
+                                <svg id="vitals-svg-canvas" class="w-full h-full p-4" viewBox="0 0 500 200" preserveAspectRatio="none">
+                                    <!-- Populated dynamically via JS -->
+                                </svg>
+                                <div id="chart-tooltip" class="absolute hidden bg-indigo-900 text-white text-xs px-2.5 py-1 rounded shadow-lg pointer-events-none"></div>
+                            </div>
+                        </div>
+
+                        <!-- Historic table -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 class="font-bold text-gray-900 text-lg mb-4">Historical Logs</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-gray-200 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                            <th class="pb-3">Timestamp</th>
+                                            <th class="pb-3">BP (mmHg)</th>
+                                            <th class="pb-3">Heart Rate (bpm)</th>
+                                            <th class="pb-3">Glucose (mg/dL)</th>
+                                            <th class="pb-3">Temperature (°C)</th>
+                                            <th class="pb-3">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vitals-history-tbody" class="text-sm divide-y divide-gray-100">
+                                        <!-- Dynamic entries -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Care Team Hub -->
+            <section id="panel-careteam" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left: Care Circle & Add Event -->
+                    <div class="space-y-6 lg:col-span-1">
+                        <!-- Add Event Form -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 class="font-bold text-gray-900 text-lg mb-4">Schedule Appointment/Visit</h3>
+                            <form id="careteam-event-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Appointment Name</label>
+                                    <input id="event-name" type="text" placeholder="e.g. Dr. Roberts Clinic Visit" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Assigned Caregiver</label>
+                                    <select id="event-assignee" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                        <option value="Charles (Son)">Charles (Son)</option>
+                                        <option value="Emma (Professional Caregiver)">Emma (Pro Caregiver)</option>
+                                        <option value="Dr. Roberts">Dr. Roberts (GP)</option>
+                                        <option value="Self (Parent)">Self (Parent)</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Date</label>
+                                        <input id="event-date" type="date" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Category</label>
+                                        <select id="event-category" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                            <option value="Medical">🩺 Medical Checkup</option>
+                                            <option value="Grocery">🛒 Groceries / Supplies</option>
+                                            <option value="Visit">🏡 Home Visit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                    Save Appointment
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Care Circle list -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 class="font-bold text-gray-900 text-lg mb-3">Care Circle Directory</h3>
+                            <p class="text-xs text-gray-500 mb-4">Authorized contacts to be reached during emergencies.</p>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">Charles (Son)</p>
+                                        <p class="text-[10px] text-gray-400">Primary Contact (Remote child)</p>
+                                    </div>
+                                    <span class="text-[10px] font-semibold text-indigo-600">SMS + Call</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">Emma (Pro Caregiver)</p>
+                                        <p class="text-[10px] text-gray-400">Daily Home Helper</p>
+                                    </div>
+                                    <span class="text-[10px] font-semibold text-indigo-600">SMS Alerts</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">Dr. Roberts (GP)</p>
+                                        <p class="text-[10px] text-gray-400">Family Physician</p>
+                                    </div>
+                                    <span class="text-[10px] font-semibold text-indigo-600">Email Updates</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Dynamic Workspace Calendar & Comments -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Calendar Agenda view -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 class="font-bold text-gray-900 text-lg mb-4">Shared Care Team Calendar</h3>
+                            <div id="careteam-calendar-container" class="space-y-3">
+                                <!-- Calendar events with labels and assignees -->
+                            </div>
+                        </div>
+
+                        <!-- Real-time comments log -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                            <h3 class="font-bold text-gray-900 text-lg">Activity Feed & Care Notes</h3>
+                            <div id="careteam-notes-list" class="space-y-4 max-h-64 overflow-y-auto pr-1">
+                                <!-- Notes timeline of caregiver logs -->
+                            </div>
+
+                            <!-- Comment form -->
+                            <form id="careteam-note-form" class="flex items-center space-x-3 pt-2">
+                                <input id="note-text" type="text" placeholder="Type a note about daily care..." required class="flex-grow bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-lg text-sm shadow-sm transition">
+                                    Post
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Medical Vault -->
+            <section id="panel-vault" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Upload console -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
+                        <h3 class="font-bold text-gray-900 text-lg mb-3">Upload Medical Vault</h3>
+                        <p class="text-xs text-gray-500 mb-4">Secure digital repository for prescriptions and records.</p>
+                        
+                        <form id="vault-upload-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Document Title</label>
+                                <input id="vault-title" type="text" placeholder="e.g. Blood Test Report Aug 2026" required class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Category</label>
+                                <select id="vault-category" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                    <option value="Prescription">📄 Prescription</option>
+                                    <option value="Lab Report">🧪 Laboratory Report</option>
+                                    <option value="Insurance">💳 Insurance Card</option>
+                                </select>
+                            </div>
+
+                            <!-- Mock Drag & Drop Upload field -->
+                            <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-500 transition relative">
+                                <input id="vault-file-input" type="file" accept="image/*,application/pdf" class="absolute inset-0 opacity-0 cursor-pointer">
+                                <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                <span id="vault-file-label" class="text-xs font-semibold text-gray-500 block">Click to select record (PDF/Img)</span>
+                                <span class="text-[10px] text-gray-400 block mt-0.5">Maximum size: 5MB</span>
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                Upload & Encrypt File
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Medical Vault document display grid -->
+                    <div class="lg:col-span-3 space-y-6">
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+                            <div class="flex items-center justify-between flex-wrap gap-3">
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-lg">Active Record Archive</h3>
+                                    <p class="text-xs text-gray-500">Secure cloud-indexed medical records matching the basa profile.</p>
+                                </div>
+                                <!-- Filters -->
+                                <div class="flex items-center space-x-2">
+                                    <input id="vault-search" type="text" placeholder="Search records..." class="bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2 text-xs transition">
+                                </div>
+                            </div>
+
+                            <!-- Document Grid -->
+                            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <!-- Dynamically rendered prescription files -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Geofencing Alerts -->
+            <section id="panel-geofence" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Geofence config console -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1 space-y-6">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg">Geofence Safeguards</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Define physical security parameters and boundary thresholds.</p>
+                        </div>
+
+                        <!-- Safe boundary radius slider -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs text-gray-700 font-semibold">
+                                <span>Safe Radius Threshold</span>
+                                <span id="geofence-radius-val" class="text-indigo-600">100 meters</span>
+                            </div>
+                            <input id="geofence-radius-slider" type="range" min="50" max="500" step="25" value="100" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                            <p class="text-[10px] text-gray-400">Triggers emergency alerts if parent wanders outside this zone from Basa (Home).</p>
+                        </div>
+
+                        <!-- Location simulation controls -->
+                        <div class="space-y-3 pt-4 border-t border-gray-100">
+                            <h4 class="font-bold text-gray-900 text-sm">Parent Location Simulator</h4>
+                            <p class="text-xs text-gray-500">Move parent's marker to test automated geofencing triggers.</p>
+                            <div class="flex flex-col space-y-2">
+                                <button id="btn-geo-inside" class="w-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-semibold py-2 rounded-lg text-xs transition">
+                                    Simulate: Inside Safe Zone (Home)
+                                </button>
+                                <button id="btn-geo-near" class="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 font-semibold py-2 rounded-lg text-xs transition">
+                                    Simulate: Near Boundary (Market)
+                                </button>
+                                <button id="btn-geo-outside" class="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold py-2 rounded-lg text-xs transition">
+                                    Simulate: Outside Boundary (Wandering!)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Log container -->
+                        <div class="pt-4 border-t border-gray-100 space-y-2">
+                            <h4 class="font-semibold text-gray-900 text-sm">Geofence Log Feed</h4>
+                            <div id="geofence-alert-log" class="text-xs text-gray-500 space-y-1 max-h-32 overflow-y-auto">
+                                <!-- Live wandering log records -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual map projection -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 h-full flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-lg">Real-Time Safe Map Projection</h3>
+                                <p class="text-xs text-gray-500">Interactive telemetry visualizer representing neighborhood geofence.</p>
+                            </div>
+
+                            <!-- Map canvas mockup using SVG -->
+                            <div class="relative flex-grow min-h-[350px] bg-sky-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center">
+                                <svg id="geofence-map-svg" class="w-full h-full" viewBox="0 0 400 300">
+                                    <!-- Dynamic Map Grids & Nodes -->
+                                    <defs>
+                                        <radialGradient id="safe-radial" cx="50%" cy="50%" r="50%">
+                                            <stop offset="70%" stop-color="#3b82f6" stop-opacity="0.1"/>
+                                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                                        </radialGradient>
+                                    </defs>
+                                    <!-- Background grid -->
+                                    <g stroke="#e2e8f0" stroke-width="0.5">
+                                        <line x1="50" y1="0" x2="50" y2="300" />
+                                        <line x1="100" y1="0" x2="100" y2="300" />
+                                        <line x1="150" y1="0" x2="150" y2="300" />
+                                        <line x1="200" y1="0" x2="200" y2="300" />
+                                        <line x1="250" y1="0" x2="250" y2="300" />
+                                        <line x1="300" y1="0" x2="300" y2="300" />
+                                        <line x1="350" y1="0" x2="350" y2="300" />
+                                        <line x1="0" y1="50" x2="400" y2="50" />
+                                        <line x1="0" y1="100" x2="400" y2="100" />
+                                        <line x1="0" y1="150" x2="400" y2="150" />
+                                        <line x1="0" y1="200" x2="400" y2="200" />
+                                        <line x1="0" y1="250" x2="400" y2="250" />
+                                    </g>
+                                    
+                                    <!-- Road network -->
+                                    <path d="M 0,150 L 400,150 M 200,0 L 200,300 M 50,50 L 350,250" stroke="#cbd5e1" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+                                    <!-- Safe Geofence Zone Circle -->
+                                    <circle id="map-geofence-circle" cx="200" cy="150" r="100" fill="url(#safe-radial)" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5 3"/>
+
+                                    <!-- Home Node (Basa) -->
+                                    <circle cx="200" cy="150" r="8" fill="#4f46e5" stroke="#ffffff" stroke-width="2"/>
+                                    <text x="210" y="154" font-size="10" font-weight="bold" fill="#4f46e5">Basa (Home)</text>
+
+                                    <!-- Neighborhood Landmarks -->
+                                    <circle cx="100" cy="100" r="4" fill="#64748b"/>
+                                    <text x="85" y="90" font-size="8" fill="#64748b">Park</text>
+                                    
+                                    <circle cx="280" cy="80" r="4" fill="#64748b"/>
+                                    <text x="270" y="70" font-size="8" fill="#64748b">Pharmacy</text>
+
+                                    <circle cx="320" cy="220" r="4" fill="#64748b"/>
+                                    <text x="310" y="210" font-size="8" fill="#64748b">Supermarket</text>
+
+                                    <!-- Parent position node -->
+                                    <circle id="map-parent-node" cx="200" cy="150" r="7" fill="#10b981" stroke="#ffffff" stroke-width="2" class="transition-all duration-500"/>
+                                    <circle id="map-parent-pulse" cx="200" cy="150" r="15" fill="none" stroke="#10b981" stroke-width="1.5" opacity="0.6" class="animate-ping transition-all duration-500"/>
+                                </svg>
+                                
+                                <!-- Active wandering warn overlay -->
+                                <div id="map-warn-overlay" class="hidden absolute inset-0 bg-red-600/10 border-4 border-red-600 animate-pulse pointer-events-none flex items-center justify-center">
+                                    <span class="bg-red-700 text-white font-bold px-4 py-2 rounded shadow-md text-sm">WANDERING OUTSIDE BOUNDARY ALERT!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Wellness & Voice Command Hub -->
+            <section id="panel-wellness" class="tab-panel hidden space-y-6">
+                <!-- Row 1: Voice Commands Simulator & IoT Detail -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left: Voice Control Console -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg mb-1">Voice Command Simulation</h3>
+                            <p class="text-xs text-gray-500">Log activities hands-free using simulated ambient microphone speech commands.</p>
+                            
+                            <!-- Commands Quick Guide -->
+                            <div class="bg-gray-50 border border-gray-100 p-3 rounded-lg my-4 text-xs space-y-1">
+                                <span class="font-bold text-gray-700 block mb-1">Available commands:</span>
+                                <div>• <code class="font-mono text-indigo-600">took my pills</code> - Mark morning medications done</div>
+                                <div>• <code class="font-mono text-indigo-600">emergency panic</code> - Trigger emergency SOS protocol</div>
+                                <div>• <code class="font-mono text-indigo-600">log glucose 110</code> - Records glucose log entry</div>
+                                <div>• <code class="font-mono text-indigo-600">home check</code> - Pull current ambient sensors statuses</div>
+                            </div>
+
+                            <!-- Mock speech console input -->
+                            <div class="space-y-3">
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type or Simulate Speech Command</label>
+                                <div class="flex items-center space-x-2">
+                                    <input id="voice-input" type="text" placeholder="e.g. took my pills..." class="flex-grow bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                    <button id="btn-voice-mic" class="bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-600 p-2.5 rounded-lg flex items-center justify-center shrink-0" title="Simulate Microphone Input">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Speech parsing logs -->
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <span class="font-bold text-xs text-gray-700 block mb-2">Voice Recognition Output Feed</span>
+                            <div id="voice-output-feed" class="text-xs bg-gray-900 text-green-400 p-3 rounded-lg font-mono min-h-[60px] max-h-24 overflow-y-auto">
+                                [System] Microphone simulator initialized. Say/type "took my pills"...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Cognitive Training Brain game -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-gray-900 text-lg">Brain Training - Memory Match</h3>
+                                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Cognitive</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Quick game designed to support aging cognitive health and memory focus.</p>
+
+                            <!-- Score and moves stats -->
+                            <div class="flex space-x-6 my-3 text-xs font-semibold text-gray-600">
+                                <span>Time: <span id="game-time" class="text-gray-900">0s</span></span>
+                                <span>Moves: <span id="game-moves" class="text-gray-900">0</span></span>
+                                <span>Pairs Matched: <span id="game-matches" class="text-indigo-600">0 / 6</span></span>
+                            </div>
+
+                            <!-- Memory match card grid (3x4) -->
+                            <div id="memory-game-grid" class="grid grid-cols-4 gap-2 my-2 select-none max-w-[320px] mx-auto">
+                                <!-- 12 cards populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Reset trigger -->
+                        <button id="btn-reset-game" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold py-2 rounded-lg text-xs shadow-sm mt-4 transition">
+                            Reset Brain Challenge Game
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: IoT Telemetry detail -->
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg">Smart Ambient Sensor Telemetry Details</h3>
+                            <p class="text-xs text-gray-500">Live environmental log values. Select anomaly simulation mode below.</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="btn-iot-normal" class="px-3 py-1.5 bg-green-100 border border-green-200 text-green-700 font-bold rounded-lg text-xs transition">Normal Activity Mode</button>
+                            <button id="btn-iot-anomaly" class="px-3 py-1.5 bg-yellow-100 border border-yellow-200 text-yellow-700 font-bold rounded-lg text-xs transition">Inactivity Anomaly Mode</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- Sensor Node 1 -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-gray-700">Kitchen Sensor</span>
+                                <span class="w-2 h-2 rounded-full bg-green-500" id="iot-dot-kitchen"></span>
+                            </div>
+                            <p class="text-2xl font-black text-gray-800" id="iot-val-kitchen">Active</p>
+                            <p class="text-[10px] text-gray-400">PIR Motion Detector (Updated 2m ago)</p>
+                        </div>
+
+                        <!-- Sensor Node 2 -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-gray-700">Bedroom Temp</span>
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            </div>
+                            <p class="text-2xl font-black text-gray-800">22.5 °C</p>
+                            <p class="text-[10px] text-gray-400">Target Range: 20°C - 24°C (Normal)</p>
+                        </div>
+
+                        <!-- Sensor Node 3 -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-gray-700">Bathroom Status</span>
+                                <span class="w-2 h-2 rounded-full bg-green-500" id="iot-dot-bathroom"></span>
+                            </div>
+                            <p class="text-2xl font-black text-gray-800" id="iot-val-bathroom">Normal</p>
+                            <p class="text-[10px] text-gray-400" id="iot-sub-bathroom">Motion detected in last hour</p>
+                        </div>
+
+                        <!-- Sensor Node 4 -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-gray-700">Living Room Humidity</span>
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            </div>
+                            <p class="text-2xl font-black text-gray-800">45% RH</p>
+                            <p class="text-[10px] text-gray-400">Optimal comfort range (Normal)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script imports -->
+    <script src="app.js"></script>
+</body>
+</html>
