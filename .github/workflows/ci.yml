@@ -74,12 +74,13 @@ jobs:
 
       - name: Build static files
         run: |
-          mkdir -p dist
-          for f in index.html app.js styles.css; do
+          mkdir -p dist/vendor
+          for f in index.html app.js db.js styles.css; do
             if [ -f "$f" ]; then
               cp "$f" dist/
             fi
           done
+          cp vendor/pouchdb.min.js dist/vendor/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

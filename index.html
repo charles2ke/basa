@@ -12,6 +12,13 @@
     <!-- Top Header -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-4 shadow-sm">
         <div class="flex items-center space-x-3 min-w-0">
+            <!-- Hamburger menu trigger for the main navigation drawer -->
+            <button id="btn-hamburger" type="button" aria-label="Open main navigation" aria-expanded="false" aria-controls="sidebar"
+                class="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition shrink-0">
+                <svg id="icon-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
             <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center shrink-0">
                 <!-- Home Icon SVG -->
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -61,45 +68,64 @@
     </header>
 
     <!-- Main Container -->
-    <div class="flex-grow flex flex-col md:flex-row">
-        <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="bg-white w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col justify-between shrink-0 shadow-sm z-30">
-            <div class="p-2 md:p-4 space-y-1">
-                <p class="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Main Navigation</p>
-                <nav id="main-nav" class="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
-                    <button data-tab="overview" class="tab-btn active shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+    <div class="flex-grow flex flex-col">
+        <!-- Navigation drawer backdrop -->
+        <div id="nav-overlay" class="hidden" aria-hidden="true"></div>
+
+        <!-- Sidebar Navigation (hamburger drawer) -->
+        <aside id="sidebar" class="bg-white w-64 border-r border-gray-200 flex flex-col justify-between shrink-0 shadow-xl" role="dialog" aria-label="Main navigation" aria-modal="false">
+            <div class="p-4 space-y-1">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Main Navigation</p>
+                    <button id="btn-close-nav" type="button" aria-label="Close main navigation" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <nav id="main-nav" class="flex flex-col gap-1">
+                    <button data-tab="overview" class="tab-btn active w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path></svg>
                         <span>Dashboard Overview</span>
                     </button>
-                    <button data-tab="scheduler" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                    <button data-tab="scheduler" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         <span>Medication & Routines</span>
                     </button>
-                    <button data-tab="vitals" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                    <button data-tab="vitals" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2"></path></svg>
                         <span>Vitals Tracker</span>
                     </button>
-                    <button data-tab="careteam" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                    <button data-tab="careteam" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                         <span>Care Team Hub</span>
                     </button>
-                    <button data-tab="vault" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                    <button data-tab="vault" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         <span>Medical Vault</span>
                     </button>
-                    <button data-tab="geofence" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                    <button data-tab="geofence" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         <span>Geofence Alerts</span>
                     </button>
-                    <button data-tab="wellness" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                    <button data-tab="wellness" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                         <span>Wellness & Voice</span>
+                    </button>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1 pt-3 pb-1">Setup</p>
+                    <button data-tab="setup-parent" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span>Parent Setup</span>
+                    </button>
+                    <button data-tab="setup-child" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-1a4 4 0 00-4-4h-1m-6 5H2v-1a4 4 0 014-4h1m5-4a4 4 0 100-8 4 4 0 000 8zm7-3a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5 10a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path></svg>
+                        <span>Child / Caregiver Setup</span>
                     </button>
                 </nav>
             </div>
 
             <!-- Sidebar Info / Bottom Stats -->
-            <div class="hidden md:block p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+            <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
                 <div class="text-xs text-gray-600">
                     <p class="font-bold">Home Ambient Stats</p>
                     <div class="mt-1 flex justify-between">
@@ -118,6 +144,7 @@
 
                 <div class="pt-2 border-t border-gray-200 text-center text-[10px] text-gray-400 font-mono">
                     basa parent-care v1.0.0
+                    <span id="side-storage-engine" class="block text-[9px] text-gray-400">Storage: PouchDB (IndexedDB)</span>
                 </div>
             </div>
         </aside>
@@ -132,7 +159,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-lg">EMERGENCY ACTIVATED!</h3>
-                        <p class="text-xs text-red-100">SOS Triggered. Family notified. GPS Location: <span id="sos-gps-text">Kathmandu, Nepal</span></p>
+                        <p class="text-xs text-red-100">SOS Triggered. Family notified. GPS Location: <span id="sos-gps-text">Kathmandu, Nepal</span> &middot; Local emergency line: <span id="sos-local-number" class="font-bold">112</span></p>
                     </div>
                 </div>
                 <div>
@@ -301,6 +328,34 @@
                     <div id="overview-log-timeline" class="space-y-4 max-h-60 overflow-y-auto">
                         <!-- Populated dynamically with safety, vitals, routines activities -->
                     </div>
+                </div>
+
+                <!-- Local Emergency Numbers (resolved from the visitor's IP location) -->
+                <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg">Local Emergency Numbers</h3>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Detected from your IP address:
+                                <span id="emergency-location" class="font-semibold text-gray-700">Detecting location…</span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="emergency-country-select" class="sr-only">Country</label>
+                            <select id="emergency-country-select" class="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white text-gray-700">
+                                <!-- Populated dynamically -->
+                            </select>
+                            <button id="btn-refresh-emergency" type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                                Detect again
+                            </button>
+                        </div>
+                    </div>
+                    <div id="emergency-numbers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <p id="emergency-numbers-note" class="text-[11px] text-gray-400 mt-3">
+                        Numbers are stored offline in the app. If detection fails, pick the country manually.
+                    </p>
                 </div>
             </section>
 
@@ -854,10 +909,157 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Tab: Parent Setup -->
+            <section id="panel-setup-parent" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="font-bold text-gray-900 text-lg">Parent Profile Setup</h3>
+                        <p class="text-xs text-gray-500 mt-1 mb-4">Details about the parent being cared for. Saved to the on-device NoSQL database.</p>
+                        <form id="setup-parent-form" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="parent-name" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
+                                    <input id="parent-name" name="parent-name" type="text" required placeholder="e.g. Ram Bahadur Shrestha" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-dob" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Date of Birth</label>
+                                    <input id="parent-dob" name="parent-dob" type="date" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-phone" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Phone Number</label>
+                                    <input id="parent-phone" name="parent-phone" type="tel" placeholder="+977 98XXXXXXXX" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-blood" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Blood Group</label>
+                                    <select id="parent-blood" name="parent-blood" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                        <option value="">Unknown</option>
+                                        <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                                        <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label for="parent-address" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Home Address (Safe Zone Center)</label>
+                                    <input id="parent-address" name="parent-address" type="text" placeholder="House no, street, city" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-conditions" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Medical Conditions</label>
+                                    <input id="parent-conditions" name="parent-conditions" type="text" placeholder="Hypertension, Diabetes" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-allergies" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Allergies</label>
+                                    <input id="parent-allergies" name="parent-allergies" type="text" placeholder="Penicillin" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-doctor" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Primary Doctor</label>
+                                    <input id="parent-doctor" name="parent-doctor" type="text" placeholder="Dr. Roberts" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="parent-doctor-phone" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Doctor Phone</label>
+                                    <input id="parent-doctor-phone" name="parent-doctor-phone" type="tel" placeholder="+977 1XXXXXXX" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div class="sm:col-span-2 flex items-center space-x-2">
+                                    <input id="parent-large-text" name="parent-large-text" type="checkbox" class="w-4 h-4">
+                                    <label for="parent-large-text" class="text-sm text-gray-700">Start the app in the large-text Parent View</label>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                Save Parent Setup
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="font-bold text-gray-900 text-lg mb-3">Saved Parent Profile</h3>
+                        <div id="setup-parent-summary" class="text-sm text-gray-700 space-y-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Child / Caregiver Setup -->
+            <section id="panel-setup-child" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="font-bold text-gray-900 text-lg">Child / Caregiver Setup</h3>
+                        <p class="text-xs text-gray-500 mt-1 mb-4">Who receives the alerts and how they should be delivered.</p>
+                        <form id="setup-child-form" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="child-name" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Your Name</label>
+                                    <input id="child-name" name="child-name" type="text" required placeholder="e.g. Charles" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="child-relationship" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Relationship</label>
+                                    <select id="child-relationship" name="child-relationship" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                        <option>Son</option>
+                                        <option>Daughter</option>
+                                        <option>Spouse</option>
+                                        <option>Professional Caregiver</option>
+                                        <option>Other Relative</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="child-email" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Email</label>
+                                    <input id="child-email" name="child-email" type="email" placeholder="you@example.com" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="child-phone" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Mobile Number</label>
+                                    <input id="child-phone" name="child-phone" type="tel" placeholder="+1 555 0100" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="child-backup-name" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Backup Contact Name</label>
+                                    <input id="child-backup-name" name="child-backup-name" type="text" placeholder="Sister, neighbour…" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                                <div>
+                                    <label for="child-backup-phone" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Backup Contact Phone</label>
+                                    <input id="child-backup-phone" name="child-backup-phone" type="tel" placeholder="+1 555 0111" class="w-full bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
+                                </div>
+                            </div>
+
+                            <fieldset class="border border-gray-200 rounded-lg p-3">
+                                <legend class="text-xs font-bold text-gray-500 uppercase tracking-wider px-1">Alerts to receive</legend>
+                                <div class="space-y-2 mt-1">
+                                    <div class="flex items-center space-x-2">
+                                        <input id="child-alert-sos" name="child-alert-sos" type="checkbox" checked class="w-4 h-4">
+                                        <label for="child-alert-sos" class="text-sm text-gray-700">SOS panic alerts</label>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <input id="child-alert-geofence" name="child-alert-geofence" type="checkbox" checked class="w-4 h-4">
+                                        <label for="child-alert-geofence" class="text-sm text-gray-700">Geofence / wandering alerts</label>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <input id="child-alert-medication" name="child-alert-medication" type="checkbox" checked class="w-4 h-4">
+                                        <label for="child-alert-medication" class="text-sm text-gray-700">Missed medication reminders</label>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                Save Caregiver Setup
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="font-bold text-gray-900 text-lg mb-3">Saved Caregiver Profile</h3>
+                        <div id="setup-child-summary" class="text-sm text-gray-700 space-y-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+                            <p class="font-bold text-gray-700 mb-1">Where is my data stored?</p>
+                            <p>Everything stays on this device inside <span class="font-mono">PouchDB</span>, an open source NoSQL document database backed by IndexedDB.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
     <!-- Script imports -->
+    <script src="vendor/pouchdb.min.js"></script>
+    <script src="db.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -2,6 +2,13 @@
 const { test, expect } = require("@playwright/test");
 const path = require("path");
 
+/** The main navigation now lives behind the hamburger menu. */
+async function openTab(page, tab) {
+  await page.click("#btn-hamburger");
+  await page.click(`button[data-tab='${tab}']`);
+  await expect(page.locator(`#panel-${tab}`)).toBeVisible();
+}
+
 test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   
   test.beforeEach(async ({ page }) => {
@@ -38,44 +45,44 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
 
   test("Navigation switching renders tab panels correctly", async ({ page }) => {
     // Click Medication scheduler tab
-    await page.click("button[data-tab='scheduler']");
+    await openTab(page, "scheduler");
     await expect(page.locator("#panel-scheduler")).toBeVisible();
     await expect(page.locator("#panel-overview")).toBeHidden();
 
     // Click Vitals tab
-    await page.click("button[data-tab='vitals']");
+    await openTab(page, "vitals");
     await expect(page.locator("#panel-vitals")).toBeVisible();
     
     // Verify SVG trend line is rendering
     await expect(page.locator("#vitals-svg-canvas")).toBeVisible();
 
     // Click Care Team Hub tab
-    await page.click("button[data-tab='careteam']");
+    await openTab(page, "careteam");
     await expect(page.locator("#panel-careteam")).toBeVisible();
 
     // Click Medical Vault tab
-    await page.click("button[data-tab='vault']");
+    await openTab(page, "vault");
     await expect(page.locator("#panel-vault")).toBeVisible();
 
     // Click Geofence Alerts tab
-    await page.click("button[data-tab='geofence']");
+    await openTab(page, "geofence");
     await expect(page.locator("#panel-geofence")).toBeVisible();
 
     // Click Wellness & Voice tab
-    await page.click("button[data-tab='wellness']");
+    await openTab(page, "wellness");
     await expect(page.locator("#panel-wellness")).toBeVisible();
   });
 
   test("Medication routines checklist updates completion progress bars", async ({ page }) => {
     // Navigate to medication scheduler
-    await page.click("button[data-tab='scheduler']");
+    await openTab(page, "scheduler");
 
     // Check progress on dashboard overview (0% initial or from seed)
-    await page.click("button[data-tab='overview']");
+    await openTab(page, "overview");
     const progressText = await page.locator("#overview-routine-progress-pct").textContent();
 
     // Navigate back to scheduler and mark the first routine completed
-    await page.click("button[data-tab='scheduler']");
+    await openTab(page, "scheduler");
     
     // Click "Mark Taken" on first routine
     const markTakenBtn = page.locator("text=Mark Taken").first();
@@ -85,7 +92,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     await expect(page.locator("text=✓ Taken at").first()).toBeVisible();
 
     // Go back to overview and check progress bar update
-    await page.click("button[data-tab='overview']");
+    await openTab(page, "overview");
     const progressTextUpdated = await page.locator("#overview-routine-progress-pct").textContent();
     
     // Verify progress value increased
@@ -114,7 +121,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Vitals logging updates SVG trends visual nodes & logs in tables", async ({ page }) => {
-    await page.click("button[data-tab='vitals']");
+    await openTab(page, "vitals");
 
     // Count rows initially in history table
     const initialRows = await page.locator("#vitals-history-tbody tr").count();
@@ -142,7 +149,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Care team workspace coordinates shared appointments & live caregiver updates", async ({ page }) => {
-    await page.click("button[data-tab='careteam']");
+    await openTab(page, "careteam");
 
     // Count comments/notes in caregiver thread
     const initialNotesCount = await page.locator("#careteam-notes-list > div").count();
@@ -158,7 +165,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Medical Vault processes mock document archiving search categorization", async ({ page }) => {
-    await page.click("button[data-tab='vault']");
+    await openTab(page, "vault");
 
     // Fill file upload details
     await page.fill("#vault-title", "Cardiology Clinic Report Nov 2026");
@@ -178,7 +185,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Geofencing limits configure dynamically & wandering simulations trigger automatic alerts", async ({ page }) => {
-    await page.click("button[data-tab='geofence']");
+    await openTab(page, "geofence");
 
     // Geofencing sliders render
     const slider = page.locator("#geofence-radius-slider");
@@ -201,7 +208,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Wellness match games execute focus memory match puzzles", async ({ page }) => {
-    await page.click("button[data-tab='wellness']");
+    await openTab(page, "wellness");
 
     // Brain training card board grid renders 12 cells
     const gameGrid = page.locator("#memory-game-grid");
@@ -216,7 +223,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Ambient IoT simulator toggles normal vs anomaly telemetry alerts", async ({ page }) => {
-    await page.click("button[data-tab='wellness']");
+    await openTab(page, "wellness");
 
     // Trigger normal active IoT telemetry
     await page.click("#btn-iot-normal");
@@ -233,7 +240,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Voice commands parse routine updates successfully", async ({ page }) => {
-    await page.click("button[data-tab='wellness']");
+    await openTab(page, "wellness");
 
     // Fill command field
     await page.fill("#voice-input", "took my pills");
@@ -242,6 +249,99 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     // Output visual feed logs successful voice parsing
     const feed = page.locator("#voice-output-feed");
     await expect(feed).toContainText("Success: Marked");
+  });
+
+  test("Main navigation is hidden behind the hamburger menu", async ({ page }) => {
+    const sidebar = page.locator("#sidebar");
+    const overlay = page.locator("#nav-overlay");
+
+    // Navigation is closed on load
+    await expect(sidebar).toBeHidden();
+    await expect(overlay).toBeHidden();
+    await expect(page.locator("#btn-hamburger")).toHaveAttribute("aria-expanded", "false");
+
+    // Opening the drawer reveals every navigation entry
+    await page.click("#btn-hamburger");
+    await expect(sidebar).toBeVisible();
+    await expect(overlay).toBeVisible();
+    await expect(page.locator("#btn-hamburger")).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator("button[data-tab='overview']")).toBeVisible();
+
+    // Selecting an entry navigates and closes the drawer
+    await page.click("button[data-tab='vault']");
+    await expect(page.locator("#panel-vault")).toBeVisible();
+    await expect(sidebar).toBeHidden();
+
+    // Backdrop click closes the drawer
+    await page.click("#btn-hamburger");
+    await expect(sidebar).toBeVisible();
+    await page.click("#nav-overlay", { position: { x: 350, y: 300 } });
+    await expect(sidebar).toBeHidden();
+
+    // Escape key closes the drawer
+    await page.click("#btn-hamburger");
+    await expect(sidebar).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(sidebar).toBeHidden();
+  });
+
+  test("Parent setup page stores the profile in the NoSQL database", async ({ page }) => {
+    await openTab(page, "setup-parent");
+
+    await page.fill("#parent-name", "Ram Bahadur Shrestha");
+    await page.fill("#parent-dob", "1948-04-12");
+    await page.fill("#parent-phone", "+977 9800000000");
+    await page.selectOption("#parent-blood", "O+");
+    await page.fill("#parent-address", "Basa House, Kathmandu");
+    await page.fill("#parent-conditions", "Hypertension");
+    await page.click("text=Save Parent Setup");
+
+    const summary = page.locator("#setup-parent-summary");
+    await expect(summary).toContainText("Ram Bahadur Shrestha");
+    await expect(summary).toContainText("Basa House, Kathmandu");
+
+    // The profile survives a reload, proving it was persisted
+    await page.reload();
+    await openTab(page, "setup-parent");
+    await expect(page.locator("#parent-name")).toHaveValue("Ram Bahadur Shrestha");
+    await expect(page.locator("#side-storage-engine")).toContainText("PouchDB");
+  });
+
+  test("Child setup page stores caregiver contacts and alert preferences", async ({ page }) => {
+    await openTab(page, "setup-child");
+
+    await page.fill("#child-name", "Charles");
+    await page.selectOption("#child-relationship", "Son");
+    await page.fill("#child-email", "charles@example.com");
+    await page.fill("#child-phone", "+1 555 0100");
+    await page.uncheck("#child-alert-medication");
+    await page.click("text=Save Caregiver Setup");
+
+    const summary = page.locator("#setup-child-summary");
+    await expect(summary).toContainText("Charles");
+    await expect(summary).toContainText("charles@example.com");
+
+    await page.reload();
+    await openTab(page, "setup-child");
+    await expect(page.locator("#child-name")).toHaveValue("Charles");
+    await expect(page.locator("#child-alert-medication")).not.toBeChecked();
+  });
+
+  test("Emergency numbers card resolves numbers for the detected location", async ({ page }) => {
+    const grid = page.locator("#emergency-numbers-grid");
+    await expect(grid).toContainText("Police");
+    await expect(grid.locator("a").first()).toHaveAttribute("href", /^tel:/);
+
+    // Manual override updates the listed numbers immediately
+    await page.selectOption("#emergency-country-select", "JP");
+    await expect(page.locator("#emergency-location")).toHaveText("Japan");
+    await expect(grid).toContainText("110");
+    await expect(grid).toContainText("119");
+    await expect(page.locator("#emergency-numbers-note")).toContainText("selected manually");
+
+    // Choice is persisted across reloads
+    await page.reload();
+    await expect(page.locator("#emergency-country-select")).toHaveValue("JP");
   });
 
 });
