@@ -72,22 +72,6 @@ jobs:
           name: coverage-summary
           path: coverage
 
-      - name: Auto-update README
-        run: |
-          node scripts/update-readme.js
-
-      - name: Commit & Push Updated README
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          if ! git diff --cached --quiet; then
-            git commit -m "docs: auto-update README.md with build and coverage metrics [skip ci]"
-            git push origin HEAD:main
-          else
-            echo "No changes in README.md to commit."
-          fi
-
       - name: Build static files
         run: |
           mkdir -p dist
@@ -108,3 +92,21 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Auto-update README
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          node scripts/update-readme.js
+
+      - name: Commit & Push Updated README
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: auto-update README.md with build, coverage and deployment metrics [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "No changes in README.md to commit."
+          fi
