@@ -244,11 +244,53 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
 
     // Fill command field
     await page.fill("#voice-input", "took my pills");
-    await page.click("#btn-voice-mic");
+    await page.click("#btn-voice-send");
 
     // Output visual feed logs successful voice parsing
     const feed = page.locator("#voice-output-feed");
     await expect(feed).toContainText("Success: Marked");
+  });
+
+  test("Microphone button live transcribes speech into the command box", async ({ page }) => {
+    // Replace the Web Speech API with a stub that emits interim then final results
+    await page.addInitScript(() => {
+      class FakeRecognition {
+        start() {
+          setTimeout(() => {
+            if (this.onstart) this.onstart();
+            if (this.onresult) {
+              this.onresult({
+                resultIndex: 0,
+                results: [Object.assign([{ transcript: "took my" }], { isFinal: false })]
+              });
+              this.onresult({
+                resultIndex: 0,
+                results: [Object.assign([{ transcript: "took my pills" }], { isFinal: true })]
+              });
+            }
+          }, 10);
+        }
+        stop() {
+          if (this.onend) this.onend();
+        }
+      }
+      window.SpeechRecognition = FakeRecognition;
+      window.webkitSpeechRecognition = FakeRecognition;
+    });
+    await page.goto("/");
+    await openTab(page, "wellness");
+
+    await page.click("#btn-voice-mic");
+
+    // Live transcript lands in the input while listening
+    await expect(page.locator("#voice-input")).toHaveValue("took my pills");
+    await expect(page.locator("#voice-mic-status")).toContainText("Heard:");
+    await expect(page.locator("#btn-voice-mic")).toHaveAttribute("aria-pressed", "true");
+
+    // Stopping the microphone runs the transcribed command
+    await page.click("#btn-voice-mic");
+    await expect(page.locator("#voice-output-feed")).toContainText("took my pills");
+    await expect(page.locator("#btn-voice-mic")).toHaveAttribute("aria-pressed", "false");
   });
 
   test("Main navigation is hidden behind the hamburger menu", async ({ page }) => {
@@ -330,7 +372,10 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   test("Emergency numbers card resolves numbers for the detected location", async ({ page }) => {
     const grid = page.locator("#emergency-numbers-grid");
     await expect(grid).toContainText("Police");
-    await expect(grid.locator("a").first()).toHaveAttribute("href", /^tel:/);
+    // Whole card is a tel: link so a tap opens the phone dialler on mobile
+    const firstCard = grid.locator("a").first();
+    await expect(firstCard).toHaveAttribute("href", /^tel:[0-9+*#]+$/);
+    await expect(firstCard).toContainText("Tap to call");
 
     // Manual override updates the listed numbers immediately
     await page.selectOption("#emergency-country-select", "JP");

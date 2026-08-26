@@ -159,7 +159,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-lg">EMERGENCY ACTIVATED!</h3>
-                        <p class="text-xs text-red-100">SOS Triggered. Family notified. GPS Location: <span id="sos-gps-text">Kathmandu, Nepal</span> &middot; Local emergency line: <span id="sos-local-number" class="font-bold">112</span></p>
+                        <p class="text-xs text-red-100">SOS Triggered. Family notified. GPS Location: <span id="sos-gps-text">Kathmandu, Nepal</span> &middot; Local emergency line: <a id="sos-local-number" href="tel:112" class="font-bold underline">112</a></p>
                     </div>
                 </div>
                 <div>
@@ -792,7 +792,7 @@
                     <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div>
                             <h3 class="font-bold text-gray-900 text-lg mb-1">Voice Command Simulation</h3>
-                            <p class="text-xs text-gray-500">Log activities hands-free using simulated ambient microphone speech commands.</p>
+                            <p class="text-xs text-gray-500">Log activities hands-free: the microphone live transcribes your speech into text commands.</p>
                             
                             <!-- Commands Quick Guide -->
                             <div class="bg-gray-50 border border-gray-100 p-3 rounded-lg my-4 text-xs space-y-1">
@@ -803,15 +803,19 @@
                                 <div>• <code class="font-mono text-indigo-600">home check</code> - Pull current ambient sensors statuses</div>
                             </div>
 
-                            <!-- Mock speech console input -->
+                            <!-- Speech console input -->
                             <div class="space-y-3">
-                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type or Simulate Speech Command</label>
+                                <label for="voice-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Speak or type a command</label>
                                 <div class="flex items-center space-x-2">
                                     <input id="voice-input" type="text" placeholder="e.g. took my pills..." class="flex-grow bg-gray-50 border border-gray-300 focus:border-indigo-500 rounded-lg p-2.5 text-sm transition">
-                                    <button id="btn-voice-mic" class="bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-600 p-2.5 rounded-lg flex items-center justify-center shrink-0" title="Simulate Microphone Input">
+                                    <button id="btn-voice-mic" type="button" aria-pressed="false" class="bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-600 p-2.5 rounded-lg flex items-center justify-center shrink-0" title="Start live speech to text">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                                     </button>
+                                    <button id="btn-voice-send" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-3 py-2.5 rounded-lg shrink-0 transition" title="Run the typed command">
+                                        Send
+                                    </button>
                                 </div>
+                                <p id="voice-mic-status" class="text-[11px] text-gray-400">Tap the microphone to live transcribe your speech into the command box.</p>
                             </div>
                         </div>
 
@@ -819,7 +823,7 @@
                         <div class="mt-4 pt-4 border-t border-gray-100">
                             <span class="font-bold text-xs text-gray-700 block mb-2">Voice Recognition Output Feed</span>
                             <div id="voice-output-feed" class="text-xs bg-gray-900 text-green-400 p-3 rounded-lg font-mono min-h-[60px] max-h-24 overflow-y-auto">
-                                [System] Microphone simulator initialized. Say/type "took my pills"...
+                                [System] Speech recognition ready. Tap the microphone and say "took my pills"...
                             </div>
                         </div>
                     </div>
