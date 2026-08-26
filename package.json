@@ -8,6 +8,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "serve": "^14.2.4"
   }
 }
