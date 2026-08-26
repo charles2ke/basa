@@ -389,4 +389,33 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     await expect(page.locator("#emergency-country-select")).toHaveValue("JP");
   });
 
+  test("Wearable connections and manual vitals sync", async ({ page }) => {
+    await openTab(page, "vitals");
+
+    const connectBtn = page.locator("#btn-wearable-garmin");
+    await expect(connectBtn).toHaveText("Connect");
+    await expect(page.locator("#wearables-sync-status")).toContainText("No wearable connected");
+
+    // Manual sync without a connection prompts the user to connect first
+    await page.click("#btn-wearables-sync");
+    await expect(page.locator("#wearables-sync-status")).toContainText("Connect Google Fit");
+
+    // Connect Garmin and Whoop, then sync manually
+    await connectBtn.click();
+    await expect(connectBtn).toHaveText("Disconnect");
+    await page.click("#btn-wearable-whoop");
+
+    await page.click("#btn-wearables-sync");
+    await expect(page.locator("#wearables-sync-status")).toContainText("2 source(s) connected");
+    await expect(page.locator("#wearable-status-garmin")).toContainText("last sync");
+    await expect(page.locator("#vitals-history-tbody")).toContainText("bpm");
+
+    // Connections survive a reload, and disconnecting works
+    await page.reload();
+    await openTab(page, "vitals");
+    await expect(page.locator("#btn-wearable-garmin")).toHaveText("Disconnect");
+    await page.click("#btn-wearable-garmin");
+    await expect(page.locator("#wearable-status-garmin")).toContainText("Not connected");
+  });
+
 });

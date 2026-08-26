@@ -31,6 +31,7 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 - **Smart Ambient Telemetry**: Real-time monitoring of motion sensors, temperature, and environmental status.
 - **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
 - **Elder Care Circle**: Collaborative platform for scheduling appointments, routines tracking, and caregiver logs sharing.
+- **Wearable Sync**: Connect Google Fit, Garmin or Whoop from the Vitals tab and pull the latest readings on demand with the manual **Sync Now** button.
 - **Medical Vault**: Securely encrypted health report logs and prescription storage.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
 - **Hamburger Navigation**: The main navigation lives in an off-canvas drawer opened from the header hamburger button on every screen size.
@@ -55,7 +56,7 @@ Daily medication and routine checklists with completion progress bars.
 ![Scheduler](docs/screenshots/scheduler.png)
 
 ### Vitals Tracker
-Blood pressure, pulse, glucose, and temperature logging with SVG trend charts and a historic readings table.
+Blood pressure, pulse, glucose, and temperature logging with SVG trend charts and a historic readings table. Google Fit, Garmin and Whoop can be connected from the same tab; each connected platform contributes the metrics its devices measure and **Sync Now** merges them into today's reading.
 
 ![Vitals trends](docs/screenshots/vitals.png)
 

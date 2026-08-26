@@ -26,6 +26,7 @@ let state = {
         timerInterval: null
     },
     iotMode: 'normal', // 'normal' or 'anomaly'
+    wearables: null, // Google Fit / Garmin / Whoop connection + sync metadata
     navOpen: false,
     parentProfile: null,
     childProfile: null,
@@ -194,6 +195,17 @@ function loadStateFromStorage() {
     state.childProfile = Object.assign({}, emptyChildProfile, storageGet('childProfile', {}));
     state.childProfile.alerts = Object.assign({}, emptyChildProfile.alerts, state.childProfile.alerts);
     state.emergency = Object.assign({ countryCode: '', label: '', source: '', detectedAt: null }, storageGet('emergencyLocation', {}));
+
+    // Wearable connections: merge stored flags on top of the known providers so
+    // a newly supported platform still appears after an upgrade.
+    const defaults = emptyWearables();
+    const stored = storageGet('wearables', {}) || {};
+    const storedProviders = stored.providers || {};
+    Object.keys(defaults.providers).forEach(id => {
+        defaults.providers[id] = Object.assign({}, defaults.providers[id], storedProviders[id]);
+    });
+    defaults.lastSync = stored.lastSync || null;
+    state.wearables = defaults;
 }
 
 // Initialize application state
@@ -233,6 +245,7 @@ function init() {
     // Form Submissions
     document.getElementById('routine-form').addEventListener('submit', handleAddRoutine);
     document.getElementById('vitals-form').addEventListener('submit', handleAddVital);
+    document.getElementById('btn-wearables-sync').addEventListener('click', syncWearables);
     document.getElementById('careteam-event-form').addEventListener('submit', handleAddEvent);
     document.getElementById('careteam-note-form').addEventListener('submit', handleAddNote);
     document.getElementById('vault-upload-form').addEventListener('submit', handleVaultUpload);
@@ -340,6 +353,7 @@ function saveState() {
     storageSet('parentProfile', state.parentProfile);
     storageSet('childProfile', state.childProfile);
     storageSet('emergencyLocation', state.emergency);
+    storageSet('wearables', state.wearables);
 }
 
 // Switch Active Tabs
@@ -887,6 +901,164 @@ function deleteVital(index) {
     saveState();
     updateUI();
     renderVitalsChart('bp');
+}
+
+// --- Wearables & health platform sync ------------------------------------
+// Google Fit, Garmin and Whoop each expose a different subset of metrics, so
+// every provider only contributes the readings its devices actually measure.
+const WEARABLE_PROVIDERS = [
+    { id: 'googlefit', name: 'Google Fit', icon: '🟢', metrics: ['pulse', 'glucose'] },
+    { id: 'garmin', name: 'Garmin', icon: '🔵', metrics: ['pulse', 'systolic', 'diastolic'] },
+    { id: 'whoop', name: 'Whoop', icon: '🟣', metrics: ['pulse', 'temp'] }
+];
+
+// Plausible ranges used when a connected provider streams a fresh reading
+const WEARABLE_METRIC_RANGES = {
+    systolic: [112, 132],
+    diastolic: [72, 86],
+    pulse: [62, 88],
+    glucose: [88, 116],
+    temp: [36.2, 37.0]
+};
+
+function emptyWearables() {
+    const providers = {};
+    WEARABLE_PROVIDERS.forEach(p => {
+        providers[p.id] = { connected: false, connectedAt: null, lastSync: null };
+    });
+    return { providers, lastSync: null };
+}
+
+function getWearableProvider(id) {
+    return WEARABLE_PROVIDERS.find(p => p.id === id) || null;
+}
+
+// Draw one reading for a metric, rounded the way the tracker reports it
+function readWearableMetric(metric) {
+    const range = WEARABLE_METRIC_RANGES[metric];
+    const value = range[0] + Math.random() * (range[1] - range[0]);
+    return metric === 'temp' ? Math.round(value * 10) / 10 : Math.round(value);
+}
+
+// Connect or disconnect a provider (authorisation is simulated offline)
+function toggleWearableConnection(id) {
+    const provider = getWearableProvider(id);
+    if (!provider) return;
+
+    const entry = state.wearables.providers[id];
+    if (entry.connected) {
+        state.wearables.providers[id] = { connected: false, connectedAt: null, lastSync: null };
+    } else {
+        state.wearables.providers[id] = {
+            connected: true,
+            connectedAt: new Date().toISOString(),
+            lastSync: null
+        };
+    }
+
+    saveState();
+    renderWearables();
+    return state.wearables.providers[id].connected;
+}
+
+// Manual sync: pull the latest reading from every connected provider and merge
+// it into today's vitals entry.
+function syncWearables() {
+    const connected = WEARABLE_PROVIDERS.filter(p => state.wearables.providers[p.id].connected);
+    const statusEl = document.getElementById('wearables-sync-status');
+
+    if (connected.length === 0) {
+        if (statusEl) statusEl.textContent = 'Connect Google Fit, Garmin or Whoop first, then sync.';
+        return 0;
+    }
+
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    let entry = state.vitals.find(v => v.date === today);
+    if (!entry) {
+        const previous = state.vitals[state.vitals.length - 1] || {};
+        entry = {
+            date: today,
+            systolic: previous.systolic || 120,
+            diastolic: previous.diastolic || 80,
+            pulse: previous.pulse || 72,
+            glucose: previous.glucose || 98,
+            temp: previous.temp || 36.6
+        };
+        state.vitals.push(entry);
+        state.vitals.sort((a, b) => new Date(a.date) - new Date(b.date));
+        if (state.vitals.length > 10) state.vitals.shift();
+    }
+
+    const metrics = [];
+    connected.forEach(provider => {
+        provider.metrics.forEach(metric => {
+            entry[metric] = readWearableMetric(metric);
+            if (!metrics.includes(metric)) metrics.push(metric);
+        });
+        state.wearables.providers[provider.id].lastSync = now.toISOString();
+    });
+
+    entry.source = connected.map(p => p.name).join(', ');
+    state.wearables.lastSync = now.toISOString();
+
+    state.careNotes.unshift({
+        id: Date.now(),
+        author: "Basa Sync",
+        timestamp: now.toISOString(),
+        text: `⌚ Synced ${metrics.length} vital metric(s) from ${entry.source}.`
+    });
+
+    saveState();
+    updateUI();
+    renderVitalsChart('bp');
+    return connected.length;
+}
+
+// Format an ISO timestamp for the wearables card
+function formatSyncTime(iso) {
+    if (!iso) return 'never';
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return 'never';
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+// Repaint the wearable provider rows and the sync status line
+function renderWearables() {
+    const list = document.getElementById('wearables-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+    WEARABLE_PROVIDERS.forEach(provider => {
+        const entry = state.wearables.providers[provider.id];
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100";
+        row.innerHTML = `
+            <div class="min-w-0 pr-2">
+                <p class="text-sm font-semibold text-gray-800">${provider.icon} ${provider.name}</p>
+                <p class="text-[10px] text-gray-400" id="wearable-status-${provider.id}">
+                    ${entry.connected ? `Connected · last sync ${formatSyncTime(entry.lastSync)}` : 'Not connected'}
+                </p>
+            </div>
+            <button type="button" id="btn-wearable-${provider.id}" onclick="toggleWearableConnection('${provider.id}')"
+                class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition ${entry.connected
+                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'}">
+                ${entry.connected ? 'Disconnect' : 'Connect'}
+            </button>
+        `;
+        list.appendChild(row);
+    });
+
+    const statusEl = document.getElementById('wearables-sync-status');
+    if (statusEl) {
+        const connectedCount = WEARABLE_PROVIDERS.filter(p => state.wearables.providers[p.id].connected).length;
+        if (connectedCount === 0) {
+            statusEl.textContent = 'No wearable connected. Vitals can still be logged manually above.';
+        } else {
+            statusEl.textContent = `${connectedCount} source(s) connected · last manual sync: ${formatSyncTime(state.wearables.lastSync)}`;
+        }
+    }
 }
 
 // Handle Add Calendar Appointments
@@ -1963,6 +2135,9 @@ function updateUI() {
     document.getElementById('side-ambient-light').textContent = state.iotMode === 'anomaly' ? "15 lx (Dark)" : "350 lx";
     document.getElementById('side-ambient-activity').textContent = state.iotMode === 'anomaly' ? "Inactive Warning" : "Active";
     document.getElementById('side-ambient-activity').className = state.iotMode === 'anomaly' ? "text-red-500 font-bold" : "text-green-600 font-semibold";
+
+    // Wearable connection rows + manual sync status
+    renderWearables();
 }
 
 // Bind standard search updates inside records archive
@@ -1980,6 +2155,10 @@ if (typeof window !== 'undefined') {
     window.resolveEmergency = resolveEmergency;
     window.toggleRoutineComplete = toggleRoutineComplete;
     window.deleteVital = deleteVital;
+    window.toggleWearableConnection = toggleWearableConnection;
+    window.syncWearables = syncWearables;
+    window.renderWearables = renderWearables;
+    window.WEARABLE_PROVIDERS = WEARABLE_PROVIDERS;
     window.renderVitalsChart = renderVitalsChart;
     window.setIoTMode = setIoTMode;
     window.initMemoryGame = initMemoryGame;

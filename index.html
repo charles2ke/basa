@@ -455,6 +455,23 @@
                                 Save Vital Log
                             </button>
                         </form>
+
+                        <!-- Wearable / health platform connections -->
+                        <div class="mt-6 pt-6 border-t border-gray-200 space-y-4">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-lg">Connected Devices</h3>
+                                <p class="text-xs text-gray-500">Link Google Fit, Garmin or Whoop to pull vitals automatically.</p>
+                            </div>
+
+                            <div id="wearables-list" class="space-y-2">
+                                <!-- Provider rows rendered dynamically -->
+                            </div>
+
+                            <button id="btn-wearables-sync" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm shadow-sm transition">
+                                Sync Now
+                            </button>
+                            <p id="wearables-sync-status" class="text-xs text-gray-400"></p>
+                        </div>
                     </div>
 
                     <!-- Interactive SVG Charts and Log Lists -->

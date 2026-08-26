@@ -17,7 +17,8 @@ describe('Basa Dashboard Unit Tests', () => {
       'state', 'switchTab', 'setViewMode', 'triggerEmergency', 
       'resolveEmergency', 'toggleRoutineComplete', 'deleteVital', 
       'renderVitalsChart', 'setIoTMode', 'initMemoryGame', 
-      'handleMemoryFlip', 'triggerVoiceCommandSim', 'updateUI'
+      'handleMemoryFlip', 'triggerVoiceCommandSim', 'updateUI',
+      'toggleWearableConnection', 'syncWearables', 'renderWearables'
     ];
     props.forEach(prop => {
       delete window[prop];
@@ -995,6 +996,84 @@ describe('Basa Dashboard Unit Tests', () => {
   test('hydration is skipped when the NoSQL engine is unavailable', async () => {
     require('../../app.js');
     await expect(window.hydrateFromDatabase()).resolves.toBe(false);
+  });
+
+  test('wearable providers connect, persist and disconnect', () => {
+    require('../../app.js');
+
+    // All three providers are rendered and start disconnected
+    expect(document.getElementById('btn-wearable-googlefit').textContent).toContain('Connect');
+    expect(document.getElementById('btn-wearable-garmin')).not.toBeNull();
+    expect(document.getElementById('btn-wearable-whoop')).not.toBeNull();
+    expect(window.state.wearables.providers.googlefit.connected).toBe(false);
+
+    document.getElementById('btn-wearable-googlefit').click();
+    expect(window.state.wearables.providers.googlefit.connected).toBe(true);
+    expect(document.getElementById('btn-wearable-googlefit').textContent).toContain('Disconnect');
+    expect(JSON.parse(window.localStorage.getItem('basa_wearables')).providers.googlefit.connected).toBe(true);
+
+    // Toggling again disconnects and clears the sync stamp
+    document.getElementById('btn-wearable-googlefit').click();
+    expect(window.state.wearables.providers.googlefit.connected).toBe(false);
+    expect(window.state.wearables.providers.googlefit.lastSync).toBeNull();
+
+    // Unknown providers are ignored
+    expect(window.toggleWearableConnection('fitbit')).toBeUndefined();
+  });
+
+  test('manual sync requires at least one connected wearable', () => {
+    require('../../app.js');
+
+    expect(window.syncWearables()).toBe(0);
+    expect(document.getElementById('wearables-sync-status').textContent).toContain('Connect Google Fit');
+  });
+
+  test('manual sync pulls vitals from every connected wearable', () => {
+    require('../../app.js');
+
+    window.toggleWearableConnection('garmin');
+    window.toggleWearableConnection('whoop');
+
+    const before = window.state.vitals.length;
+    expect(window.syncWearables()).toBe(2);
+
+    const today = new Date().toISOString().split('T')[0];
+    const entry = window.state.vitals.find(v => v.date === today);
+    expect(entry).toBeDefined();
+    expect(entry.source).toContain('Garmin');
+    expect(entry.source).toContain('Whoop');
+    expect(entry.pulse).toBeGreaterThan(0);
+    expect(entry.temp).toBeGreaterThan(30);
+    expect(window.state.vitals.length).toBeGreaterThanOrEqual(before);
+    expect(window.state.wearables.lastSync).not.toBeNull();
+    expect(window.state.wearables.providers.garmin.lastSync).not.toBeNull();
+    expect(window.state.careNotes[0].text).toContain('Synced');
+    expect(document.getElementById('wearables-sync-status').textContent).toContain('2 source(s) connected');
+  });
+
+  test('manual sync button creates a new dated entry when today has no log', () => {
+    window.localStorage.setItem('basa_vitals', JSON.stringify([]));
+    require('../../app.js');
+
+    window.toggleWearableConnection('googlefit');
+    document.getElementById('btn-wearables-sync').click();
+
+    expect(window.state.vitals.length).toBe(1);
+    expect(window.state.vitals[0].glucose).toBeGreaterThan(0);
+    expect(document.getElementById('wearable-status-googlefit').textContent).toContain('last sync');
+  });
+
+  test('stored wearable connections are restored on load', () => {
+    window.localStorage.setItem('basa_wearables', JSON.stringify({
+      providers: { whoop: { connected: true, connectedAt: '2026-08-25T10:00:00.000Z', lastSync: 'not-a-date' } },
+      lastSync: '2026-08-25T10:05:00.000Z'
+    }));
+    require('../../app.js');
+
+    expect(window.state.wearables.providers.whoop.connected).toBe(true);
+    expect(window.state.wearables.providers.googlefit.connected).toBe(false);
+    // Unparseable timestamps degrade gracefully
+    expect(document.getElementById('wearable-status-whoop').textContent).toContain('never');
   });
 
   test('corrupted stored values fall back to the seed data', () => {
