@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
     "serve": "serve -l 8080"
   },

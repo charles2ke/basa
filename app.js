@@ -1325,3 +1325,20 @@ document.getElementById('vault-search').addEventListener('input', updateUI);
 
 // Trigger application startup
 init();
+
+// Expose functions globally for dynamic HTML event handlers and testing
+if (typeof window !== 'undefined') {
+    window.state = state;
+    window.switchTab = switchTab;
+    window.setViewMode = setViewMode;
+    window.triggerEmergency = triggerEmergency;
+    window.resolveEmergency = resolveEmergency;
+    window.toggleRoutineComplete = toggleRoutineComplete;
+    window.deleteVital = deleteVital;
+    window.renderVitalsChart = renderVitalsChart;
+    window.setIoTMode = setIoTMode;
+    window.initMemoryGame = initMemoryGame;
+    window.handleMemoryFlip = handleMemoryFlip;
+    window.triggerVoiceCommandSim = triggerVoiceCommandSim;
+    window.updateUI = updateUI;
+}

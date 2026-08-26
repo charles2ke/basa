@@ -1,0 +1,3 @@
+{"total": {"lines":{"total":664,"covered":639,"skipped":0,"pct":96.23},"statements":{"total":708,"covered":679,"skipped":0,"pct":95.9},"functions":{"total":76,"covered":73,"skipped":0,"pct":96.05},"branches":{"total":210,"covered":166,"skipped":0,"pct":79.04},"branchesTrue":{"total":0,"covered":0,"skipped":0,"pct":"Unknown"}}
+,"/home/runner/work/basa/basa/app.js": {"lines":{"total":664,"covered":639,"skipped":0,"pct":96.23},"functions":{"total":76,"covered":73,"skipped":0,"pct":96.05},"statements":{"total":708,"covered":679,"skipped":0,"pct":95.9},"branches":{"total":210,"covered":166,"skipped":0,"pct":79.04}}
+}
