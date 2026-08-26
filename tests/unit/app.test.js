@@ -542,4 +542,86 @@ describe('Basa Dashboard Unit Tests', () => {
     expect(firstCircle.getAttribute('r')).toBe('5');
     expect(tooltip.classList.contains('hidden')).toBe(true);
   });
+
+  test('coverage extension tests for empty states and edge cases', () => {
+    require('../../app.js');
+
+    // 1. Shift vitals when more than 10 records are added
+    window.state.vitals = [];
+    for (let i = 0; i < 10; i++) {
+      window.state.vitals.push({
+        date: `2026-08-${10 + i}`,
+        systolic: 120,
+        diastolic: 80,
+        pulse: 72,
+        glucose: 100,
+        temp: 36.6
+      });
+    }
+    // Now trigger form submit to add 11th vital
+    document.getElementById('vital-systolic').value = '130';
+    document.getElementById('vital-diastolic').value = '85';
+    document.getElementById('vital-pulse').value = '75';
+    document.getElementById('vital-glucose').value = '105';
+    document.getElementById('vital-temp').value = '36.8';
+    document.getElementById('vitals-form').dispatchEvent(new Event('submit'));
+    // The length should still be 10, meaning state.vitals.shift() was executed (line 360 covered)
+    expect(window.state.vitals.length).toBe(10);
+
+    // 2. Clear vitals and verify "No logs found." is rendered in history table (line 1090 covered)
+    window.state.vitals = [];
+    window.updateUI();
+    expect(document.getElementById('vitals-history-tbody').textContent).toContain('No logs found.');
+
+    // 3. Clear careEvents and check calendarContainer (line 1120 covered)
+    window.state.careEvents = [];
+    window.updateUI();
+    expect(document.getElementById('careteam-calendar-container').textContent).toContain('No scheduled appointments inside care circle.');
+
+    // 4. Clear careNotes and check notesList (line 1149 covered)
+    window.state.careNotes = [];
+    window.updateUI();
+    expect(document.getElementById('careteam-notes-list').textContent).toContain('No wellness discussion logs recorded yet.');
+
+    // 5. Clear vaultDocs and search for a non-existent document to show "No matching prescriptions or files located." (line 1177 covered)
+    window.state.vaultDocs = [];
+    document.getElementById('vault-search').value = 'unknownfile';
+    window.updateUI();
+    expect(document.getElementById('vault-grid').textContent).toContain('No matching prescriptions or files located.');
+
+    // 6. Test secure vault decryption preview clicking (line 1203 covered) and Insurance category (line 1185)
+    window.state.vaultDocs = [
+      { id: 1, title: "Test Doc", category: "Prescription", size: "1 MB", date: "2026-08-26" },
+      { id: 2, title: "Insurance Doc", category: "Insurance", size: "2 MB", date: "2026-08-26" }
+    ];
+    document.getElementById('vault-search').value = '';
+    window.updateUI();
+    const vaultCards = document.querySelectorAll('#vault-grid > div');
+    expect(vaultCards.length).toBe(2);
+    vaultCards[0].dispatchEvent(new Event('click'));
+    expect(window.alert).toHaveBeenCalled();
+
+    // 7. Non-existent routine toggle
+    window.toggleRoutineComplete(9999);
+
+    // 8. Add caregiver note in parent mode (line 414 covered)
+    window.state.viewMode = 'parent';
+    document.getElementById('note-text').value = 'Parent notes';
+    document.getElementById('careteam-note-form').dispatchEvent(new Event('submit'));
+    expect(window.state.careNotes[0].author).toBe('Self (Parent)');
+
+    // 9. Timeline with geofence log color dot (line 1303)
+    window.state.geofence.logs = [{ time: '12:00', event: '🚨 Wandered outside safe perimeter zone!' }];
+    window.updateUI();
+    expect(document.getElementById('overview-log-timeline').innerHTML).toContain('bg-yellow-500 animate-pulse');
+
+    // 10. Clear everything and check if the activity feed timeline is empty (line 1293 covered)
+    window.state.vitals = [];
+    window.state.emergencyLog = [];
+    window.state.routines = [];
+    window.state.geofence.logs = [];
+    window.state.careNotes = [];
+    window.updateUI();
+    expect(document.getElementById('overview-log-timeline').textContent).toContain('No activity logged today yet.');
+  });
 });

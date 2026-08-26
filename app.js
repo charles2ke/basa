@@ -613,7 +613,7 @@ function triggerVoiceCommandSim() {
     }
 
     // append to visual feed
-    feed.innerText = `>> ${inputEl.value}\n[Voice Engine] ${outputText}\n\n` + feed.innerText;
+    feed.textContent = `>> ${inputEl.value}\n[Voice Engine] ${outputText}\n\n` + feed.textContent;
     inputEl.value = "";
     
     saveState();
