@@ -35,7 +35,7 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
 - **Hamburger Navigation**: The main navigation lives in an off-canvas drawer opened from the header hamburger button on every screen size.
 - **Setup Pages**: Dedicated Parent Setup and Child/Caregiver Setup pages for profiles, contacts and alert preferences.
-- **Local Emergency Numbers**: Police, ambulance and fire numbers resolved from the visitor's IP location, with a manual country override.
+- **Local Emergency Numbers**: Police, ambulance and fire numbers resolved from the visitor's IP location, with a manual country override. Each card is a `tel:` link, so tapping one opens the phone dialler on mobile.
 - **Offline NoSQL Storage**: All data is stored on-device in [PouchDB](https://pouchdb.com/), a free and open source NoSQL document database backed by IndexedDB.
 - **Mobile Friendly**: Fully responsive layout with stacked cards and touch-friendly controls.
 
@@ -75,7 +75,7 @@ Configurable safe-zone radius with wandering simulation that triggers automatic 
 ![Geofencing and alerts](docs/screenshots/geofence.png)
 
 ### Wellness & Voice
-Brain-training memory match game plus a voice-command simulator for hands-free routine updates.
+Brain-training memory match game plus live speech-to-text voice commands (Web Speech API) for hands-free routine updates, with a typed fallback.
 
 ![Wellness games](docs/screenshots/wellness.png)
 
@@ -95,7 +95,7 @@ Caregiver contact details, a backup contact, and per-channel alert preferences.
 ![Child setup page](docs/screenshots/setup-child.png)
 
 ### Local Emergency Numbers
-Police, ambulance and fire numbers for the country detected from the visitor's IP address, with a manual override.
+Police, ambulance and fire numbers for the country detected from the visitor's IP address, with a manual override. Tapping a card dials the number on mobile devices.
 
 ![Emergency numbers card](docs/screenshots/emergency-numbers.png)
 

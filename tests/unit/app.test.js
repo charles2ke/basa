@@ -433,8 +433,92 @@ describe('Basa Dashboard Unit Tests', () => {
     expect(input.value).toBe('no trigger');
   });
 
-  test('Wellness memory game focus puzzles matching and victory logic', () => {
-    jest.useFakeTimers();
+  test('Microphone button live transcribes speech into the command input', () => {
+    let instance = null;
+    class FakeRecognition {
+      constructor() { instance = this; this.started = false; }
+      start() { this.started = true; if (this.onstart) this.onstart(); }
+      stop() { this.started = false; if (this.onend) this.onend(); }
+    }
+    window.SpeechRecognition = FakeRecognition;
+    window.webkitSpeechRecognition = FakeRecognition;
+
+    require('../../app.js');
+
+    const mic = document.getElementById('btn-voice-mic');
+    const input = document.getElementById('voice-input');
+    const status = document.getElementById('voice-mic-status');
+
+    mic.click();
+    expect(instance.started).toBe(true);
+    expect(mic.getAttribute('aria-pressed')).toBe('true');
+    expect(status.textContent).toContain('Listening');
+
+    // Interim result streams into the input as live text
+    instance.onresult({
+      resultIndex: 0,
+      results: [Object.assign([{ transcript: 'took my' }], { isFinal: false })]
+    });
+    expect(input.value).toBe('took my');
+
+    // Final result is retained and executed once the microphone stops
+    instance.onresult({
+      resultIndex: 0,
+      results: [Object.assign([{ transcript: 'took my pills' }], { isFinal: true })]
+    });
+    expect(input.value).toBe('took my pills');
+
+    window.state.routines[0].completed = false;
+    mic.click();
+    expect(mic.getAttribute('aria-pressed')).toBe('false');
+    expect(window.state.routines[0].completed).toBe(true);
+    expect(input.value).toBe('');
+  });
+
+  test('Microphone reports recognition errors and falls back without the API', () => {
+    let instance = null;
+    class FakeRecognition {
+      constructor() { instance = this; }
+      start() { if (this.onstart) this.onstart(); }
+      stop() { if (this.onend) this.onend(); }
+    }
+    window.SpeechRecognition = FakeRecognition;
+    window.webkitSpeechRecognition = FakeRecognition;
+
+    require('../../app.js');
+
+    const mic = document.getElementById('btn-voice-mic');
+    const status = document.getElementById('voice-mic-status');
+
+    mic.click();
+    instance.onerror({ error: 'not-allowed' });
+    expect(status.textContent).toContain('Microphone permission denied');
+    expect(mic.getAttribute('aria-pressed')).toBe('false');
+
+    // Without the Web Speech API the typed command is executed instead
+    delete window.SpeechRecognition;
+    delete window.webkitSpeechRecognition;
+    document.getElementById('voice-input').value = 'emergency panic';
+    mic.click();
+    expect(status.textContent).toContain('not supported');
+    expect(window.state.isEmergency).toBe(true);
+  });
+
+  test('Emergency numbers render as dialable tel links', () => {
+    require('../../app.js');
+
+    window.state.emergency = { countryCode: 'NP', label: 'Nepal', source: 'manual', detectedAt: null };
+    window.renderEmergencyNumbers();
+
+    const cards = document.querySelectorAll('#emergency-numbers-grid a');
+    expect(cards.length).toBe(4);
+    expect(cards[0].getAttribute('href')).toBe('tel:100');
+    expect(cards[0].getAttribute('aria-label')).toBe('Call Police on 100');
+    expect(cards[0].textContent).toContain('Tap to call');
+    expect(document.getElementById('sos-local-number').getAttribute('href')).toBe('tel:112');
+  });
+
+  test('Wellness memory game focus puzzles matching and victory logic', () => {    jest.useFakeTimers();
     require('../../app.js');
 
     // Click cards to test flipping

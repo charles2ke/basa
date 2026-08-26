@@ -253,8 +253,9 @@ function init() {
     document.getElementById('btn-geo-near').addEventListener('click', () => moveParentLocation(260, 200));
     document.getElementById('btn-geo-outside').addEventListener('click', () => moveParentLocation(330, 220));
 
-    // Voice simulationmic listener
-    document.getElementById('btn-voice-mic').addEventListener('click', triggerVoiceCommandSim);
+    // Voice command listeners: live dictation plus typed command fallback
+    document.getElementById('btn-voice-mic').addEventListener('click', toggleVoiceDictation);
+    document.getElementById('btn-voice-send').addEventListener('click', triggerVoiceCommandSim);
     document.getElementById('voice-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             triggerVoiceCommandSim();
@@ -641,6 +642,12 @@ function applyEmergencyLocation(countryCode, label, source) {
     renderEmergencyNumbers();
 }
 
+// Build a safe tel: URI from a displayed emergency number
+function telHref(number) {
+    const dialable = String(number || '').replace(/[^0-9+*#]/g, '');
+    return `tel:${dialable}`;
+}
+
 // Paint the emergency numbers card and the SOS banner shortcut
 function renderEmergencyNumbers() {
     const numbers = getEmergencyNumbers();
@@ -651,7 +658,13 @@ function renderEmergencyNumbers() {
     const bannerNumber = document.getElementById('sos-local-number');
 
     if (select) select.value = state.emergency.countryCode || 'DEFAULT';
-    if (bannerNumber) bannerNumber.textContent = numbers.general;
+    if (bannerNumber) {
+        bannerNumber.textContent = numbers.general;
+        if (bannerNumber.tagName === 'A') {
+            bannerNumber.href = telHref(numbers.general);
+            bannerNumber.setAttribute('aria-label', `Call the local emergency line ${numbers.general}`);
+        }
+    }
 
     if (locationEl) {
         locationEl.textContent = state.emergency.label || numbers.country;
@@ -676,20 +689,28 @@ function renderEmergencyNumbers() {
         ['Fire', numbers.fire, 'bg-orange-50 border-orange-100 text-orange-900'],
         ['General', numbers.general, 'bg-gray-50 border-gray-100 text-gray-900']
     ].forEach(([label, number, classes]) => {
-        const card = document.createElement('div');
-        card.className = `p-3 rounded-xl border ${classes}`;
+        // The whole card is a tel: link so a tap anywhere on it hands the number
+        // straight to the phone dialler on mobile devices.
+        const card = document.createElement('a');
+        card.className = `block p-3 rounded-xl border min-h-[64px] hover:shadow-sm transition ${classes}`;
+        card.href = telHref(number);
+        card.setAttribute('aria-label', `Call ${label} on ${number}`);
 
         const title = document.createElement('p');
         title.className = 'text-[10px] uppercase font-bold opacity-70';
         title.textContent = label;
 
-        const link = document.createElement('a');
-        link.className = 'text-xl font-extrabold block mt-1 hover:underline';
-        link.href = `tel:${number}`;
-        link.textContent = number;
+        const value = document.createElement('span');
+        value.className = 'text-xl font-extrabold block mt-1';
+        value.textContent = number;
+
+        const hint = document.createElement('span');
+        hint.className = 'text-[10px] font-semibold opacity-70 block mt-0.5';
+        hint.textContent = 'Tap to call';
 
         card.appendChild(title);
-        card.appendChild(link);
+        card.appendChild(value);
+        card.appendChild(hint);
         grid.appendChild(card);
     });
 }
@@ -1027,6 +1048,142 @@ function checkGeofenceStatus(writeAlert) {
         if (!state.isEmergency) {
             if (banner) banner.classList.add('hidden');
         }
+    }
+}
+
+// --- Live speech to text -------------------------------------------------
+
+let speechRecognizer = null;      // Active SpeechRecognition instance
+let isDictating = false;          // True while the microphone is listening
+let dictationFinalText = '';      // Finalised transcript for the current session
+
+// Resolve the vendor prefixed Web Speech API constructor, when available
+function getSpeechRecognitionCtor() {
+    if (typeof window === 'undefined') return null;
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+// Paint the microphone button and the status line for the current state
+function setDictationUI(listening, message) {
+    const micBtn = document.getElementById('btn-voice-mic');
+    const status = document.getElementById('voice-mic-status');
+
+    if (micBtn) {
+        micBtn.setAttribute('aria-pressed', listening ? 'true' : 'false');
+        micBtn.title = listening ? 'Stop live speech to text' : 'Start live speech to text';
+        micBtn.className = listening
+            ? 'bg-red-600 border border-red-700 text-white p-2.5 rounded-lg flex items-center justify-center shrink-0 animate-pulse'
+            : 'bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-600 p-2.5 rounded-lg flex items-center justify-center shrink-0';
+    }
+
+    if (status && message) status.textContent = message;
+}
+
+// Write a line into the voice recognition output feed
+function logVoiceFeed(text) {
+    const feed = document.getElementById('voice-output-feed');
+    if (feed) feed.textContent = `${text}\n\n` + feed.textContent;
+}
+
+// Start or stop live speech to text on the microphone button
+function toggleVoiceDictation() {
+    if (isDictating) {
+        stopVoiceDictation();
+        return;
+    }
+
+    const Recognition = getSpeechRecognitionCtor();
+    if (!Recognition) {
+        // Browser without the Web Speech API: fall back to the typed command
+        setDictationUI(false, 'Live speech to text is not supported in this browser. Type the command and press Send.');
+        logVoiceFeed('[System] Speech recognition unavailable in this browser - using typed input.');
+        triggerVoiceCommandSim();
+        return;
+    }
+
+    const inputEl = document.getElementById('voice-input');
+    dictationFinalText = '';
+    if (inputEl) inputEl.value = '';
+
+    try {
+        speechRecognizer = new Recognition();
+    } catch (err) {
+        setDictationUI(false, 'Microphone could not be started. Type the command and press Send.');
+        logVoiceFeed('[System] Speech recognition failed to initialise.');
+        return;
+    }
+
+    speechRecognizer.lang = (typeof navigator !== 'undefined' && navigator.language) || 'en-US';
+    speechRecognizer.continuous = true;
+    speechRecognizer.interimResults = true;
+
+    speechRecognizer.onstart = () => {
+        isDictating = true;
+        setDictationUI(true, 'Listening… speak your command. Tap the microphone again to stop.');
+        logVoiceFeed('[System] Microphone live. Listening for a command…');
+    };
+
+    speechRecognizer.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            const transcript = result[0] ? result[0].transcript : '';
+            if (result.isFinal) {
+                dictationFinalText = `${dictationFinalText} ${transcript}`.trim();
+            } else {
+                interim += transcript;
+            }
+        }
+
+        const liveText = `${dictationFinalText} ${interim}`.trim();
+        const field = document.getElementById('voice-input');
+        if (field) field.value = liveText;
+        setDictationUI(true, liveText ? `Heard: “${liveText}”` : 'Listening… speak your command.');
+    };
+
+    speechRecognizer.onerror = (event) => {
+        const reason = event && event.error ? event.error : 'unknown';
+        const message = reason === 'not-allowed' || reason === 'service-not-allowed'
+            ? 'Microphone permission denied. Allow microphone access or type the command and press Send.'
+            : `Speech recognition error (${reason}). Type the command and press Send.`;
+        isDictating = false;
+        setDictationUI(false, message);
+        logVoiceFeed(`[System] ${message}`);
+    };
+
+    speechRecognizer.onend = () => {
+        isDictating = false;
+        setDictationUI(false, 'Microphone off. Tap the microphone to dictate again.');
+        const spoken = dictationFinalText.trim();
+        if (spoken) {
+            const field = document.getElementById('voice-input');
+            if (field) field.value = spoken;
+            triggerVoiceCommandSim();
+        }
+        dictationFinalText = '';
+        speechRecognizer = null;
+    };
+
+    try {
+        speechRecognizer.start();
+    } catch (err) {
+        isDictating = false;
+        setDictationUI(false, 'Microphone could not be started. Type the command and press Send.');
+    }
+}
+
+// Stop an in-flight dictation session
+function stopVoiceDictation() {
+    if (!speechRecognizer) {
+        isDictating = false;
+        setDictationUI(false, 'Microphone off. Tap the microphone to dictate again.');
+        return;
+    }
+    try {
+        speechRecognizer.stop();
+    } catch (err) {
+        isDictating = false;
+        setDictationUI(false, 'Microphone off. Tap the microphone to dictate again.');
     }
 }
 
@@ -1828,6 +1985,8 @@ if (typeof window !== 'undefined') {
     window.initMemoryGame = initMemoryGame;
     window.handleMemoryFlip = handleMemoryFlip;
     window.triggerVoiceCommandSim = triggerVoiceCommandSim;
+    window.toggleVoiceDictation = toggleVoiceDictation;
+    window.stopVoiceDictation = stopVoiceDictation;
     window.updateUI = updateUI;
     window.toggleNav = toggleNav;
     window.openNav = openNav;
