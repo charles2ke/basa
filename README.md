@@ -28,7 +28,8 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 <!-- COVERAGE_END -->
 
 ## Features
-- **Smart Ambient Telemetry**: Real-time monitoring of motion sensors, temperature, and environmental status.- **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
+- **Smart Ambient Telemetry**: Real-time monitoring of motion sensors, temperature, and environmental status.
+- **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
 - **Elder Care Circle**: Collaborative platform for scheduling appointments, routines tracking, and caregiver logs sharing.
 - **Medical Vault**: Securely encrypted health report logs and prescription storage.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
