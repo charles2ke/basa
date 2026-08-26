@@ -28,8 +28,44 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 <!-- COVERAGE_END -->
 
 ## Features
-- **Smart Ambient Telemetry**: Real-time monitoring of motion sensors, temperature, and environmental status.
-- **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
+- **Smart Ambient Telemetry**: Real-time monitoring of motion sensors, temperature, and environmental status.- **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
 - **Elder Care Circle**: Collaborative platform for scheduling appointments, routines tracking, and caregiver logs sharing.
 - **Medical Vault**: Securely encrypted health report logs and prescription storage.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
+
+## Screenshots
+
+### Dashboard Overview
+Daily snapshot of your parent's status: ambient telemetry, safety alerts, medication routines, and the SOS panic protocol.
+
+![Overview dashboard](docs/screenshots/overview.png)
+
+### Medication & Routines
+Daily medication and routine checklists with completion progress bars.
+
+![Scheduler](docs/screenshots/scheduler.png)
+
+### Vitals Tracker
+Blood pressure, pulse, glucose, and temperature logging with SVG trend charts and a historic readings table.
+
+![Vitals trends](docs/screenshots/vitals.png)
+
+### Care Team Hub
+Shared caregiver workspace for coordinating appointments, shift notes, and live caregiver updates.
+
+![Care team workspace](docs/screenshots/careteam.png)
+
+### Medical Vault
+Categorized, searchable archive of health reports, prescriptions, and insurance documents.
+
+![Medical vault](docs/screenshots/vault.png)
+
+### Geofence Alerts
+Configurable safe-zone radius with wandering simulation that triggers automatic alerts.
+
+![Geofencing and alerts](docs/screenshots/geofence.png)
+
+### Wellness & Voice
+Brain-training memory match game plus a voice-command simulator for hands-free routine updates.
+
+![Wellness games](docs/screenshots/wellness.png)
