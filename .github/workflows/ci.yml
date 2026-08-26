@@ -62,7 +62,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           mkdir -p dist
-          cp index.html app.js styles.css dist/
+          for f in index.html app.js styles.css; do
+            if [ -f "$f" ]; then
+              cp "$f" dist/
+            fi
+          done
 
       - name: Setup Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
