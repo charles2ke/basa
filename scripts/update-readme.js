@@ -45,7 +45,22 @@ ${buildBadge}
 ${buildTimestamp}
 `;
 
-// 4. Update README.md
+// 4. Format live demo / deployment run links
+const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
+const repository = process.env.GITHUB_REPOSITORY || 'charles2ke/basa';
+const [repoOwner, repoName] = repository.split('/');
+const pagesUrl = process.env.PAGES_URL || `https://${repoOwner}.github.io/${repoName}/`;
+const runUrl = process.env.GITHUB_RUN_ID
+    ? `${serverUrl}/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`
+    : `${serverUrl}/${repository}/actions/workflows/ci.yml`;
+
+const liveDemoSnippet = `
+🚀 **Live site:** ${pagesUrl}
+
+**Latest deployment run:** ${runUrl}
+`;
+
+// 5. Update README.md
 let readmeContent = fs.readFileSync(readmePath, 'utf8');
 
 const buildRegex = /(<!-- BUILD_STATUS_START -->)([\s\S]*?)(<!-- BUILD_STATUS_END -->)/g;
@@ -54,5 +69,8 @@ readmeContent = readmeContent.replace(buildRegex, `$1\n${buildStatusSnippet.trim
 const coverageRegex = /(<!-- COVERAGE_START -->)([\s\S]*?)(<!-- COVERAGE_END -->)/g;
 readmeContent = readmeContent.replace(coverageRegex, `$1\n${coverageTable.trim()}\n$3`);
 
+const liveDemoRegex = /(<!-- LIVE_DEMO_START -->)([\s\S]*?)(<!-- LIVE_DEMO_END -->)/g;
+readmeContent = readmeContent.replace(liveDemoRegex, `$1\n${liveDemoSnippet.trim()}\n$3`);
+
 fs.writeFileSync(readmePath, readmeContent, 'utf8');
-console.log('Successfully updated README.md with build and coverage metrics!');
+console.log('Successfully updated README.md with build, coverage and deployment metrics!');
