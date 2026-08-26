@@ -1,5 +1,5 @@
 # Basa
-Home, Ghar, Bari - Smart Ambient Telemetry & Elder Care Circle Dashboard.
+Home, Ghar, Bari - Elder Care Circle Dashboard.
 
 ## CI/CD Status
 <!-- BUILD_STATUS_START -->
