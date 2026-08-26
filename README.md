@@ -33,6 +33,7 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 - **Elder Care Circle**: Collaborative platform for scheduling appointments, routines tracking, and caregiver logs sharing.
 - **Medical Vault**: Securely encrypted health report logs and prescription storage.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
+- **Mobile Friendly**: Fully responsive layout with a scrollable mobile tab bar, stacked cards, and touch-friendly controls.
 
 ## Screenshots
 
@@ -70,3 +71,10 @@ Configurable safe-zone radius with wandering simulation that triggers automatic 
 Brain-training memory match game plus a voice-command simulator for hands-free routine updates.
 
 ![Wellness games](docs/screenshots/wellness.png)
+
+### Mobile & Responsive Layout
+The dashboard adapts from phones to desktops: the header wraps into compact rows, the sidebar becomes a horizontally scrollable tab strip, cards stack into a single column, and wide tables scroll horizontally instead of breaking the page.
+
+| Overview (mobile) | Vitals (mobile) |
+| :---: | :---: |
+| ![Mobile overview](docs/screenshots/mobile-overview.png) | ![Mobile vitals tracker](docs/screenshots/mobile-vitals.png) |

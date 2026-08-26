@@ -112,3 +112,49 @@ body.parent-mode .tab-btn span {
 .transition-all-300 {
     transition: all 0.3s ease;
 }
+
+/* Mobile navigation tab strip (horizontal scrolling on small screens) */
+#main-nav {
+    scrollbar-width: none;
+}
+#main-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Small screen refinements */
+@media (max-width: 767px) {
+    /* Prevent accidental sideways scrolling of the whole page */
+    body {
+        overflow-x: hidden;
+    }
+    /* Comfortable touch targets */
+    .tab-btn,
+    button[type="submit"] {
+        min-height: 44px;
+    }
+    /* Avoid iOS auto-zoom when focusing form fields */
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+    /* Keep the elderly-accessible mode readable without overflowing */
+    body.parent-mode {
+        font-size: 1rem;
+    }
+    body.parent-mode p,
+    body.parent-mode select,
+    body.parent-mode input,
+    body.parent-mode button,
+    body.parent-mode span {
+        font-size: 1rem !important;
+        line-height: 1.5rem;
+    }
+    body.parent-mode .tab-btn span {
+        font-size: 1rem !important;
+    }
+    body.parent-mode input,
+    body.parent-mode select {
+        padding: 0.65rem !important;
+    }
+}

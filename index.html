@@ -10,36 +10,36 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
     <!-- Top Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-sm">
-        <div class="flex items-center space-x-3">
-            <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center">
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-4 shadow-sm">
+        <div class="flex items-center space-x-3 min-w-0">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center shrink-0">
                 <!-- Home Icon SVG -->
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                 </svg>
             </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-gray-900 flex items-center">
-                    basa <span class="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Home, Ghar, Bari</span>
+                <h1 class="text-lg sm:text-xl font-bold tracking-tight text-gray-900 flex items-center flex-wrap">
+                    basa <span class="ml-2 text-[10px] sm:text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Home, Ghar, Bari</span>
                 </h1>
-                <p class="text-xs text-gray-500">Aging Parent Care & Safety Hub</p>
+                <p class="hidden sm:block text-xs text-gray-500">Aging Parent Care & Safety Hub</p>
             </div>
         </div>
 
         <!-- Center Notification Badge / Status Indicator -->
-        <div class="flex items-center space-x-4">
-            <div id="parent-status-badge" class="flex items-center bg-green-50 text-green-700 border border-green-200 px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-all duration-300">
+        <div class="order-last lg:order-none w-full lg:w-auto flex flex-wrap items-center gap-2 sm:gap-4">
+            <div id="parent-status-badge" class="flex items-center bg-green-50 text-green-700 border border-green-200 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm transition-all duration-300">
                 <span class="w-2.5 h-2.5 bg-green-500 rounded-full mr-2 animate-pulse" id="parent-status-dot"></span>
                 Parent Status: <span id="parent-status-text" class="ml-1">Safe at Home</span>
             </div>
-            <div id="ambient-alert-badge" class="hidden flex items-center bg-yellow-50 text-yellow-700 border border-yellow-200 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300">
+            <div id="ambient-alert-badge" class="hidden flex items-center bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300">
                 <span class="w-2.5 h-2.5 bg-yellow-500 rounded-full mr-2 animate-pulse"></span>
                 IoT Status: <span id="ambient-alert-text" class="ml-1">No Activity Warning</span>
             </div>
         </div>
 
         <!-- Right Side: View Mode Switcher and Quick SOS -->
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center gap-2 sm:gap-4">
             <!-- View Selector Toggle -->
             <div class="bg-gray-100 p-0.5 rounded-lg flex items-center border border-gray-200">
                 <button id="btn-view-child" class="px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm bg-white text-indigo-600 transition-all duration-200">
@@ -51,7 +51,7 @@
             </div>
 
             <!-- Header SOS Panic Trigger -->
-            <button id="btn-quick-sos" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-md animate-bounce hover:animate-none flex items-center space-x-1.5 transition duration-200">
+            <button id="btn-quick-sos" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm shadow-md animate-bounce hover:animate-none flex items-center space-x-1.5 transition duration-200 whitespace-nowrap">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
@@ -63,35 +63,35 @@
     <!-- Main Container -->
     <div class="flex-grow flex flex-col md:flex-row">
         <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="bg-white w-full md:w-64 border-r border-gray-200 flex flex-col justify-between shrink-0 shadow-sm z-30">
-            <div class="p-4 space-y-1">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Main Navigation</p>
-                <nav class="space-y-1">
-                    <button data-tab="overview" class="tab-btn active w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+        <aside id="sidebar" class="bg-white w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col justify-between shrink-0 shadow-sm z-30">
+            <div class="p-2 md:p-4 space-y-1">
+                <p class="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Main Navigation</p>
+                <nav id="main-nav" class="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
+                    <button data-tab="overview" class="tab-btn active shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path></svg>
                         <span>Dashboard Overview</span>
                     </button>
-                    <button data-tab="scheduler" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                    <button data-tab="scheduler" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         <span>Medication & Routines</span>
                     </button>
-                    <button data-tab="vitals" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                    <button data-tab="vitals" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2"></path></svg>
                         <span>Vitals Tracker</span>
                     </button>
-                    <button data-tab="careteam" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                    <button data-tab="careteam" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                         <span>Care Team Hub</span>
                     </button>
-                    <button data-tab="vault" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                    <button data-tab="vault" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         <span>Medical Vault</span>
                     </button>
-                    <button data-tab="geofence" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                    <button data-tab="geofence" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         <span>Geofence Alerts</span>
                     </button>
-                    <button data-tab="wellness" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all">
+                    <button data-tab="wellness" class="tab-btn shrink-0 md:shrink md:w-full flex items-center space-x-2 md:space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                         <span>Wellness & Voice</span>
                     </button>
@@ -99,7 +99,7 @@
             </div>
 
             <!-- Sidebar Info / Bottom Stats -->
-            <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+            <div class="hidden md:block p-4 border-t border-gray-200 bg-gray-50 space-y-3">
                 <div class="text-xs text-gray-600">
                     <p class="font-bold">Home Ambient Stats</p>
                     <div class="mt-1 flex justify-between">
@@ -123,7 +123,7 @@
         </aside>
 
         <!-- Main Workspace Contents -->
-        <main class="flex-grow p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+        <main class="flex-grow p-4 sm:p-6 md:p-8 overflow-x-hidden max-w-7xl mx-auto w-full">
             <!-- Global Flash Banner for Emergencies -->
             <div id="flash-emergency-banner" class="hidden bg-red-600 border border-red-800 text-white rounded-xl p-4 mb-6 shadow-lg animate-pulse flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div class="flex items-center space-x-3">
@@ -155,9 +155,9 @@
             
             <!-- Tab: Dashboard Overview -->
             <section id="panel-overview" class="tab-panel space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                     <!-- Column 1: Fast Status & Action Card -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between">
                                 <h3 class="font-bold text-gray-900 text-lg">Quick SOS Control</h3>
@@ -178,7 +178,7 @@
                     </div>
 
                     <!-- Column 2: Medication Summary Card -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between">
                                 <h3 class="font-bold text-gray-900 text-lg">Routine Check-in</h3>
@@ -208,7 +208,7 @@
                     </div>
 
                     <!-- Column 3: Live Ambient IoT Card -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between">
                                 <h3 class="font-bold text-gray-900 text-lg">Smart Ambient Sensors</h3>
@@ -242,9 +242,9 @@
                 </div>
 
                 <!-- Row 2: Vitals & Geofence Quick Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <!-- Vitals Quick Cards -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-bold text-gray-900 text-lg">Latest Health Vitals</h3>
                             <button onclick="switchTab('vitals')" class="text-xs font-semibold text-indigo-600 hover:underline">Vitals Hub</button>
@@ -274,7 +274,7 @@
                     </div>
 
                     <!-- Geofencing Quick Card -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-gray-900 text-lg">Safe Geofence Range</h3>
                             <button onclick="switchTab('geofence')" class="text-xs font-semibold text-indigo-600 hover:underline">Map details</button>
@@ -296,7 +296,7 @@
                 </div>
 
                 <!-- Feed Activities Timeline -->
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                     <h3 class="font-bold text-gray-900 text-lg mb-4">Live Activity Log</h3>
                     <div id="overview-log-timeline" class="space-y-4 max-h-60 overflow-y-auto">
                         <!-- Populated dynamically with safety, vitals, routines activities -->
@@ -306,9 +306,9 @@
 
             <!-- Tab: Medication & Routine Scheduler -->
             <section id="panel-scheduler" class="tab-panel hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                     <!-- Form to add routines -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
                         <h3 class="font-bold text-gray-900 text-lg mb-4">Add Routine/Medication</h3>
                         <form id="routine-form" class="space-y-4">
                             <div>
@@ -343,7 +343,7 @@
                     </div>
 
                     <!-- Daily routine checklist and interactive logs -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-2 space-y-6">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-2 space-y-6">
                         <div>
                             <h3 class="font-bold text-gray-900 text-lg">Daily Schedule & Check-ins</h3>
                             <p class="text-xs text-gray-500 mt-0.5">Track routine safety schedules and confirm completions.</p>
@@ -367,9 +367,9 @@
 
             <!-- Tab: Vitals Tracker -->
             <section id="panel-vitals" class="tab-panel hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                     <!-- Manual input form -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
                         <h3 class="font-bold text-gray-900 text-lg mb-4">Log Daily Vitals</h3>
                         <form id="vitals-form" class="space-y-4">
                             <div>
@@ -405,7 +405,7 @@
                     <!-- Interactive SVG Charts and Log Lists -->
                     <div class="lg:col-span-3 space-y-6">
                         <!-- Chart container -->
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
                             <div class="flex items-center justify-between flex-wrap gap-3">
                                 <div>
                                     <h3 class="font-bold text-gray-900 text-lg">Vital Trend Analysis</h3>
@@ -429,10 +429,10 @@
                         </div>
 
                         <!-- Historic table -->
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 class="font-bold text-gray-900 text-lg mb-4">Historical Logs</h3>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse">
+                                <table class="w-full min-w-[640px] text-left border-collapse">
                                     <thead>
                                         <tr class="border-b border-gray-200 text-xs font-bold text-gray-400 uppercase tracking-wider">
                                             <th class="pb-3">Timestamp</th>
@@ -455,11 +455,11 @@
 
             <!-- Tab: Care Team Hub -->
             <section id="panel-careteam" class="tab-panel hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                     <!-- Left: Care Circle & Add Event -->
                     <div class="space-y-6 lg:col-span-1">
                         <!-- Add Event Form -->
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 class="font-bold text-gray-900 text-lg mb-4">Schedule Appointment/Visit</h3>
                             <form id="careteam-event-form" class="space-y-4">
                                 <div>
@@ -496,7 +496,7 @@
                         </div>
 
                         <!-- Care Circle list -->
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 class="font-bold text-gray-900 text-lg mb-3">Care Circle Directory</h3>
                             <p class="text-xs text-gray-500 mb-4">Authorized contacts to be reached during emergencies.</p>
                             <div class="space-y-3">
@@ -528,7 +528,7 @@
                     <!-- Right: Dynamic Workspace Calendar & Comments -->
                     <div class="lg:col-span-2 space-y-6">
                         <!-- Calendar Agenda view -->
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 class="font-bold text-gray-900 text-lg mb-4">Shared Care Team Calendar</h3>
                             <div id="careteam-calendar-container" class="space-y-3">
                                 <!-- Calendar events with labels and assignees -->
@@ -536,7 +536,7 @@
                         </div>
 
                         <!-- Real-time comments log -->
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
                             <h3 class="font-bold text-gray-900 text-lg">Activity Feed & Care Notes</h3>
                             <div id="careteam-notes-list" class="space-y-4 max-h-64 overflow-y-auto pr-1">
                                 <!-- Notes timeline of caregiver logs -->
@@ -556,9 +556,9 @@
 
             <!-- Tab: Medical Vault -->
             <section id="panel-vault" class="tab-panel hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                     <!-- Upload console -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1">
                         <h3 class="font-bold text-gray-900 text-lg mb-3">Upload Medical Vault</h3>
                         <p class="text-xs text-gray-500 mb-4">Secure digital repository for prescriptions and records.</p>
                         
@@ -593,7 +593,7 @@
 
                     <!-- Medical Vault document display grid -->
                     <div class="lg:col-span-3 space-y-6">
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
                             <div class="flex items-center justify-between flex-wrap gap-3">
                                 <div>
                                     <h3 class="font-bold text-gray-900 text-lg">Active Record Archive</h3>
@@ -606,7 +606,7 @@
                             </div>
 
                             <!-- Document Grid -->
-                            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                 <!-- Dynamically rendered prescription files -->
                             </div>
                         </div>
@@ -616,9 +616,9 @@
 
             <!-- Tab: Geofencing Alerts -->
             <section id="panel-geofence" class="tab-panel hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                     <!-- Geofence config console -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1 space-y-6">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-1 space-y-6">
                         <div>
                             <h3 class="font-bold text-gray-900 text-lg">Geofence Safeguards</h3>
                             <p class="text-xs text-gray-500 mt-0.5">Define physical security parameters and boundary thresholds.</p>
@@ -662,7 +662,7 @@
 
                     <!-- Visual map projection -->
                     <div class="lg:col-span-2">
-                        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 h-full flex flex-col justify-between">
+                        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 h-full flex flex-col justify-between">
                             <div>
                                 <h3 class="font-bold text-gray-900 text-lg">Real-Time Safe Map Projection</h3>
                                 <p class="text-xs text-gray-500">Interactive telemetry visualizer representing neighborhood geofence.</p>
@@ -732,9 +732,9 @@
             <!-- Tab: Wellness & Voice Command Hub -->
             <section id="panel-wellness" class="tab-panel hidden space-y-6">
                 <!-- Row 1: Voice Commands Simulator & IoT Detail -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <!-- Left: Voice Control Console -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div>
                             <h3 class="font-bold text-gray-900 text-lg mb-1">Voice Command Simulation</h3>
                             <p class="text-xs text-gray-500">Log activities hands-free using simulated ambient microphone speech commands.</p>
@@ -770,7 +770,7 @@
                     </div>
 
                     <!-- Right: Cognitive Training Brain game -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between">
                                 <h3 class="font-bold text-gray-900 text-lg">Brain Training - Memory Match</h3>
@@ -799,7 +799,7 @@
                 </div>
 
                 <!-- Row 2: IoT Telemetry detail -->
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                     <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
                         <div>
                             <h3 class="font-bold text-gray-900 text-lg">Smart Ambient Sensor Telemetry Details</h3>
@@ -811,7 +811,7 @@
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
                         <!-- Sensor Node 1 -->
                         <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
                             <div class="flex items-center justify-between">
