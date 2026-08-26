@@ -182,7 +182,7 @@ FNDA:59,renderMemoryGame
 FNDA:708,(anonymous_71)
 FNDA:0,(anonymous_72)
 FNDA:17,handleMemoryFlip
-FNDA:89,(anonymous_74)
+FNDA:86,(anonymous_74)
 FNDA:1,(anonymous_75)
 FNDA:1,(anonymous_76)
 FNDA:9,renderVitalsChart
@@ -759,7 +759,7 @@ DA:1224,530
 DA:1227,708
 DA:1230,59
 DA:1231,59
-DA:1236,89
+DA:1236,86
 DA:1237,17
 DA:1239,16
 DA:1240,16
