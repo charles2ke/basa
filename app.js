@@ -25,7 +25,16 @@ let state = {
         startTime: null,
         timerInterval: null
     },
-    iotMode: 'normal' // 'normal' or 'anomaly'
+    iotMode: 'normal', // 'normal' or 'anomaly'
+    navOpen: false,
+    parentProfile: null,
+    childProfile: null,
+    emergency: {
+        countryCode: '',
+        label: '',
+        source: '', // 'ip', 'manual' or 'fallback'
+        detectedAt: null
+    }
 };
 
 // Seed Data definition
@@ -58,31 +67,157 @@ const seedVaultDocs = [
     { id: 2, title: "Full Bio-lipid Blood Report", category: "Lab Report", size: "2.4 MB", date: "2026-08-05" }
 ];
 
+// Offline directory of official emergency service numbers, keyed by ISO 3166-1 alpha-2 code
+const EMERGENCY_NUMBERS = {
+    DEFAULT: { country: "International (GSM)", police: "112", ambulance: "112", fire: "112", general: "112" },
+    US: { country: "United States", police: "911", ambulance: "911", fire: "911", general: "911" },
+    CA: { country: "Canada", police: "911", ambulance: "911", fire: "911", general: "911" },
+    MX: { country: "Mexico", police: "911", ambulance: "911", fire: "911", general: "911" },
+    BR: { country: "Brazil", police: "190", ambulance: "192", fire: "193", general: "190" },
+    AR: { country: "Argentina", police: "101", ambulance: "107", fire: "100", general: "911" },
+    CL: { country: "Chile", police: "133", ambulance: "131", fire: "132", general: "133" },
+    CO: { country: "Colombia", police: "123", ambulance: "123", fire: "123", general: "123" },
+    GB: { country: "United Kingdom", police: "999", ambulance: "999", fire: "999", general: "112" },
+    IE: { country: "Ireland", police: "999", ambulance: "999", fire: "999", general: "112" },
+    DE: { country: "Germany", police: "110", ambulance: "112", fire: "112", general: "112" },
+    FR: { country: "France", police: "17", ambulance: "15", fire: "18", general: "112" },
+    IT: { country: "Italy", police: "112", ambulance: "118", fire: "115", general: "112" },
+    ES: { country: "Spain", police: "091", ambulance: "112", fire: "080", general: "112" },
+    PT: { country: "Portugal", police: "112", ambulance: "112", fire: "112", general: "112" },
+    NL: { country: "Netherlands", police: "112", ambulance: "112", fire: "112", general: "112" },
+    BE: { country: "Belgium", police: "101", ambulance: "112", fire: "112", general: "112" },
+    CH: { country: "Switzerland", police: "117", ambulance: "144", fire: "118", general: "112" },
+    AT: { country: "Austria", police: "133", ambulance: "144", fire: "122", general: "112" },
+    SE: { country: "Sweden", police: "112", ambulance: "112", fire: "112", general: "112" },
+    NO: { country: "Norway", police: "112", ambulance: "113", fire: "110", general: "112" },
+    DK: { country: "Denmark", police: "112", ambulance: "112", fire: "112", general: "112" },
+    FI: { country: "Finland", police: "112", ambulance: "112", fire: "112", general: "112" },
+    PL: { country: "Poland", police: "997", ambulance: "999", fire: "998", general: "112" },
+    RU: { country: "Russia", police: "102", ambulance: "103", fire: "101", general: "112" },
+    TR: { country: "Türkiye", police: "112", ambulance: "112", fire: "112", general: "112" },
+    IL: { country: "Israel", police: "100", ambulance: "101", fire: "102", general: "112" },
+    AE: { country: "United Arab Emirates", police: "999", ambulance: "998", fire: "997", general: "999" },
+    SA: { country: "Saudi Arabia", police: "999", ambulance: "997", fire: "998", general: "911" },
+    EG: { country: "Egypt", police: "122", ambulance: "123", fire: "180", general: "122" },
+    ZA: { country: "South Africa", police: "10111", ambulance: "10177", fire: "10177", general: "112" },
+    KE: { country: "Kenya", police: "999", ambulance: "999", fire: "999", general: "112" },
+    NG: { country: "Nigeria", police: "112", ambulance: "112", fire: "112", general: "112" },
+    GH: { country: "Ghana", police: "191", ambulance: "193", fire: "192", general: "112" },
+    IN: { country: "India", police: "100", ambulance: "102", fire: "101", general: "112" },
+    NP: { country: "Nepal", police: "100", ambulance: "102", fire: "101", general: "112" },
+    BD: { country: "Bangladesh", police: "999", ambulance: "999", fire: "999", general: "999" },
+    PK: { country: "Pakistan", police: "15", ambulance: "1122", fire: "16", general: "1122" },
+    LK: { country: "Sri Lanka", police: "119", ambulance: "1990", fire: "110", general: "119" },
+    CN: { country: "China", police: "110", ambulance: "120", fire: "119", general: "110" },
+    HK: { country: "Hong Kong", police: "999", ambulance: "999", fire: "999", general: "112" },
+    JP: { country: "Japan", police: "110", ambulance: "119", fire: "119", general: "110" },
+    KR: { country: "South Korea", police: "112", ambulance: "119", fire: "119", general: "112" },
+    SG: { country: "Singapore", police: "999", ambulance: "995", fire: "995", general: "999" },
+    MY: { country: "Malaysia", police: "999", ambulance: "999", fire: "994", general: "999" },
+    TH: { country: "Thailand", police: "191", ambulance: "1669", fire: "199", general: "191" },
+    VN: { country: "Vietnam", police: "113", ambulance: "115", fire: "114", general: "113" },
+    ID: { country: "Indonesia", police: "110", ambulance: "119", fire: "113", general: "112" },
+    PH: { country: "Philippines", police: "911", ambulance: "911", fire: "911", general: "911" },
+    AU: { country: "Australia", police: "000", ambulance: "000", fire: "000", general: "112" },
+    NZ: { country: "New Zealand", police: "111", ambulance: "111", fire: "111", general: "111" }
+};
+
+// Blank profile templates used by the parent and child setup pages
+const emptyParentProfile = {
+    name: "", dob: "", phone: "", blood: "", address: "",
+    conditions: "", allergies: "", doctor: "", doctorPhone: "", largeText: false
+};
+
+const emptyChildProfile = {
+    name: "", relationship: "Son", email: "", phone: "",
+    backupName: "", backupPhone: "",
+    alerts: { sos: true, geofence: true, medication: true }
+};
+
+// --- Persistence helpers -------------------------------------------------
+// All data lives in the NoSQL document database exposed by db.js (PouchDB on
+// IndexedDB). When that layer is unavailable the raw localStorage mirror is
+// used directly so the dashboard still works.
+
+function storageGet(key, fallback) {
+    if (typeof BasaDB !== 'undefined' && BasaDB) return BasaDB.get(key, fallback);
+    try {
+        const raw = localStorage.getItem(`basa_${key}`);
+        if (raw === null || raw === undefined) return fallback;
+        const parsed = JSON.parse(raw);
+        return parsed === null || parsed === undefined ? fallback : parsed;
+    } catch (err) {
+        return fallback;
+    }
+}
+
+function storageGetString(key, fallback) {
+    if (typeof BasaDB !== 'undefined' && BasaDB) return BasaDB.getString(key, fallback);
+    const raw = localStorage.getItem(`basa_${key}`);
+    return raw === null || raw === undefined ? fallback : raw;
+}
+
+function storageSet(key, value) {
+    if (typeof BasaDB !== 'undefined' && BasaDB) {
+        BasaDB.set(key, value);
+        return;
+    }
+    localStorage.setItem(`basa_${key}`, JSON.stringify(value));
+}
+
+function storageSetString(key, value) {
+    if (typeof BasaDB !== 'undefined' && BasaDB) {
+        BasaDB.setString(key, value);
+        return;
+    }
+    localStorage.setItem(`basa_${key}`, String(value));
+}
+
+// Load every persisted collection into the in-memory state object
+function loadStateFromStorage() {
+    state.routines = storageGet('routines', seedRoutines);
+    state.vitals = storageGet('vitals', seedVitals);
+    state.careEvents = storageGet('careEvents', seedEvents);
+    state.careNotes = storageGet('careNotes', seedNotes);
+    state.vaultDocs = storageGet('vaultDocs', seedVaultDocs);
+    state.isEmergency = storageGet('isEmergency', false);
+    state.emergencyLog = storageGet('emergencyLog', []);
+    state.geofence.radius = storageGet('geofence_radius', 100);
+    state.geofence.parentX = storageGet('parentX', 200);
+    state.geofence.parentY = storageGet('parentY', 150);
+    state.geofence.logs = storageGet('geofence_logs', [
+        { time: "17:00", event: "Parent status active. Coordinates aligned home." }
+    ]);
+    state.viewMode = storageGetString('viewMode', 'child');
+    state.iotMode = storageGetString('iotMode', 'normal');
+    state.parentProfile = Object.assign({}, emptyParentProfile, storageGet('parentProfile', {}));
+    state.childProfile = Object.assign({}, emptyChildProfile, storageGet('childProfile', {}));
+    state.childProfile.alerts = Object.assign({}, emptyChildProfile.alerts, state.childProfile.alerts);
+    state.emergency = Object.assign({ countryCode: '', label: '', source: '', detectedAt: null }, storageGet('emergencyLocation', {}));
+}
+
 // Initialize application state
 function init() {
-    // Load from localStorage or seed
-    state.routines = JSON.parse(localStorage.getItem('basa_routines')) || seedRoutines;
-    state.vitals = JSON.parse(localStorage.getItem('basa_vitals')) || seedVitals;
-    state.careEvents = JSON.parse(localStorage.getItem('basa_careEvents')) || seedEvents;
-    state.careNotes = JSON.parse(localStorage.getItem('basa_careNotes')) || seedNotes;
-    state.vaultDocs = JSON.parse(localStorage.getItem('basa_vaultDocs')) || seedVaultDocs;
-    state.isEmergency = JSON.parse(localStorage.getItem('basa_isEmergency')) || false;
-    state.emergencyLog = JSON.parse(localStorage.getItem('basa_emergencyLog')) || [];
-    state.geofence.radius = JSON.parse(localStorage.getItem('basa_geofence_radius')) || 100;
-    state.geofence.parentX = JSON.parse(localStorage.getItem('basa_parentX')) || 200;
-    state.geofence.parentY = JSON.parse(localStorage.getItem('basa_parentY')) || 150;
-    state.geofence.logs = JSON.parse(localStorage.getItem('basa_geofence_logs')) || [
-        { time: "17:00", event: "Parent status active. Coordinates aligned home." }
-    ];
-    state.viewMode = localStorage.getItem('basa_viewMode') || 'child';
-    state.iotMode = localStorage.getItem('basa_iotMode') || 'normal';
+    // Load from the NoSQL database mirror (or seed data on first run)
+    loadStateFromStorage();
     
     // Bind navigation tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const targetTab = btn.getAttribute('data-tab');
             switchTab(targetTab);
+            closeNav();
         });
+    });
+
+    // Hamburger navigation drawer listeners
+    document.getElementById('btn-hamburger').addEventListener('click', toggleNav);
+    document.getElementById('btn-close-nav').addEventListener('click', closeNav);
+    document.getElementById('nav-overlay').addEventListener('click', closeNav);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && state.navOpen) {
+            closeNav();
+        }
     });
 
     // View selector toggle listeners
@@ -133,29 +268,77 @@ function init() {
     document.getElementById('btn-iot-normal').addEventListener('click', () => setIoTMode('normal'));
     document.getElementById('btn-iot-anomaly').addEventListener('click', () => setIoTMode('anomaly'));
 
+    // Setup pages (parent & child profiles)
+    document.getElementById('setup-parent-form').addEventListener('submit', handleSaveParentSetup);
+    document.getElementById('setup-child-form').addEventListener('submit', handleSaveChildSetup);
+
+    // Emergency numbers controls
+    populateEmergencyCountries();
+    document.getElementById('emergency-country-select').addEventListener('change', handleEmergencyCountryChange);
+    document.getElementById('btn-refresh-emergency').addEventListener('click', () => detectEmergencyLocation(true));
+
     // Apply initialized view configurations
     setViewMode(state.viewMode);
     switchTab('overview');
     checkGeofenceStatus(false); // Evaluate geofence immediately without writing log alerts
+    renderSetupForms();
+    renderEmergencyNumbers();
     updateUI();
     initMemoryGame();
+
+    // Storage engine label + asynchronous rehydration from the NoSQL database
+    const engineLabel = document.getElementById('side-storage-engine');
+    if (engineLabel && typeof BasaDB !== 'undefined' && BasaDB) {
+        engineLabel.textContent = `Storage: ${BasaDB.engine()}`;
+    }
+    hydrateFromDatabase();
+
+    // Resolve emergency service numbers for the current IP location
+    detectEmergencyLocation(false);
 }
 
-// Save Current State to LocalStorage
+// Re-read the state from the NoSQL database once its asynchronous handle is ready
+function hydrateFromDatabase() {
+    if (typeof BasaDB === 'undefined' || !BasaDB || !BasaDB.isAvailable()) {
+        return Promise.resolve(false);
+    }
+
+    return BasaDB.hydrate().then((data) => {
+        if (!data || Object.keys(data).length === 0) {
+            saveState(); // First run: publish the seeded state into the database
+            return false;
+        }
+        loadStateFromStorage();
+        setViewMode(state.viewMode);
+        const slider = document.getElementById('geofence-radius-slider');
+        slider.value = state.geofence.radius;
+        document.getElementById('geofence-radius-val').textContent = `${state.geofence.radius} meters`;
+        checkGeofenceStatus(false);
+        renderSetupForms();
+        renderEmergencyNumbers();
+        updateUI();
+        return true;
+    });
+}
+
+// Persist the current state into the NoSQL database (with synchronous mirror)
 function saveState() {
-    localStorage.setItem('basa_routines', JSON.stringify(state.routines));
-    localStorage.setItem('basa_vitals', JSON.stringify(state.vitals));
-    localStorage.setItem('basa_careEvents', JSON.stringify(state.careEvents));
-    localStorage.setItem('basa_careNotes', JSON.stringify(state.careNotes));
-    localStorage.setItem('basa_vaultDocs', JSON.stringify(state.vaultDocs));
-    localStorage.setItem('basa_isEmergency', JSON.stringify(state.isEmergency));
-    localStorage.setItem('basa_emergencyLog', JSON.stringify(state.emergencyLog));
-    localStorage.setItem('basa_geofence_radius', JSON.stringify(state.geofence.radius));
-    localStorage.setItem('basa_parentX', JSON.stringify(state.geofence.parentX));
-    localStorage.setItem('basa_parentY', JSON.stringify(state.geofence.parentY));
-    localStorage.setItem('basa_geofence_logs', JSON.stringify(state.geofence.logs));
-    localStorage.setItem('basa_viewMode', state.viewMode);
-    localStorage.setItem('basa_iotMode', state.iotMode);
+    storageSet('routines', state.routines);
+    storageSet('vitals', state.vitals);
+    storageSet('careEvents', state.careEvents);
+    storageSet('careNotes', state.careNotes);
+    storageSet('vaultDocs', state.vaultDocs);
+    storageSet('isEmergency', state.isEmergency);
+    storageSet('emergencyLog', state.emergencyLog);
+    storageSet('geofence_radius', state.geofence.radius);
+    storageSet('parentX', state.geofence.parentX);
+    storageSet('parentY', state.geofence.parentY);
+    storageSet('geofence_logs', state.geofence.logs);
+    storageSetString('viewMode', state.viewMode);
+    storageSetString('iotMode', state.iotMode);
+    storageSet('parentProfile', state.parentProfile);
+    storageSet('childProfile', state.childProfile);
+    storageSet('emergencyLocation', state.emergency);
 }
 
 // Switch Active Tabs
@@ -204,6 +387,311 @@ function setViewMode(mode) {
         parentNotice.classList.add('hidden');
     }
     saveState();
+}
+
+// --- Hamburger navigation drawer ----------------------------------------
+
+// Open or close the main navigation drawer
+function toggleNav() {
+    setNavOpen(!state.navOpen);
+}
+
+function openNav() {
+    setNavOpen(true);
+}
+
+function closeNav() {
+    setNavOpen(false);
+}
+
+function setNavOpen(open) {
+    state.navOpen = open;
+    const overlay = document.getElementById('nav-overlay');
+    const trigger = document.getElementById('btn-hamburger');
+
+    if (open) {
+        document.body.classList.add('nav-open');
+        overlay.classList.remove('hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+        const firstTab = document.querySelector('#main-nav .tab-btn');
+        if (firstTab) firstTab.focus();
+    } else {
+        document.body.classList.remove('nav-open');
+        overlay.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+}
+
+// --- Setup pages ---------------------------------------------------------
+
+// Persist the parent profile captured on the parent setup page
+function handleSaveParentSetup(e) {
+    e.preventDefault();
+
+    state.parentProfile = {
+        name: document.getElementById('parent-name').value.trim(),
+        dob: document.getElementById('parent-dob').value,
+        phone: document.getElementById('parent-phone').value.trim(),
+        blood: document.getElementById('parent-blood').value,
+        address: document.getElementById('parent-address').value.trim(),
+        conditions: document.getElementById('parent-conditions').value.trim(),
+        allergies: document.getElementById('parent-allergies').value.trim(),
+        doctor: document.getElementById('parent-doctor').value.trim(),
+        doctorPhone: document.getElementById('parent-doctor-phone').value.trim(),
+        largeText: document.getElementById('parent-large-text').checked
+    };
+
+    saveState();
+    renderSetupForms();
+    updateUI();
+
+    if (state.parentProfile.largeText && state.viewMode !== 'parent') {
+        setViewMode('parent');
+    }
+}
+
+// Persist the caregiver ("child") profile captured on the child setup page
+function handleSaveChildSetup(e) {
+    e.preventDefault();
+
+    state.childProfile = {
+        name: document.getElementById('child-name').value.trim(),
+        relationship: document.getElementById('child-relationship').value,
+        email: document.getElementById('child-email').value.trim(),
+        phone: document.getElementById('child-phone').value.trim(),
+        backupName: document.getElementById('child-backup-name').value.trim(),
+        backupPhone: document.getElementById('child-backup-phone').value.trim(),
+        alerts: {
+            sos: document.getElementById('child-alert-sos').checked,
+            geofence: document.getElementById('child-alert-geofence').checked,
+            medication: document.getElementById('child-alert-medication').checked
+        }
+    };
+
+    saveState();
+    renderSetupForms();
+    updateUI();
+}
+
+// Prefill both setup forms and refresh their saved-profile summaries
+function renderSetupForms() {
+    const parent = state.parentProfile || Object.assign({}, emptyParentProfile);
+    const child = state.childProfile || Object.assign({}, emptyChildProfile);
+
+    document.getElementById('parent-name').value = parent.name || '';
+    document.getElementById('parent-dob').value = parent.dob || '';
+    document.getElementById('parent-phone').value = parent.phone || '';
+    document.getElementById('parent-blood').value = parent.blood || '';
+    document.getElementById('parent-address').value = parent.address || '';
+    document.getElementById('parent-conditions').value = parent.conditions || '';
+    document.getElementById('parent-allergies').value = parent.allergies || '';
+    document.getElementById('parent-doctor').value = parent.doctor || '';
+    document.getElementById('parent-doctor-phone').value = parent.doctorPhone || '';
+    document.getElementById('parent-large-text').checked = !!parent.largeText;
+
+    document.getElementById('child-name').value = child.name || '';
+    document.getElementById('child-relationship').value = child.relationship || 'Son';
+    document.getElementById('child-email').value = child.email || '';
+    document.getElementById('child-phone').value = child.phone || '';
+    document.getElementById('child-backup-name').value = child.backupName || '';
+    document.getElementById('child-backup-phone').value = child.backupPhone || '';
+    document.getElementById('child-alert-sos').checked = !!(child.alerts && child.alerts.sos);
+    document.getElementById('child-alert-geofence').checked = !!(child.alerts && child.alerts.geofence);
+    document.getElementById('child-alert-medication').checked = !!(child.alerts && child.alerts.medication);
+
+    renderProfileSummary('setup-parent-summary', parent.name ? [
+        ['Name', parent.name],
+        ['Date of birth', parent.dob || 'Not set'],
+        ['Phone', parent.phone || 'Not set'],
+        ['Blood group', parent.blood || 'Unknown'],
+        ['Home address', parent.address || 'Not set'],
+        ['Conditions', parent.conditions || 'None recorded'],
+        ['Allergies', parent.allergies || 'None recorded'],
+        ['Doctor', parent.doctor ? `${parent.doctor} (${parent.doctorPhone || 'no phone'})` : 'Not set'],
+        ['Large text mode', parent.largeText ? 'Enabled' : 'Disabled']
+    ] : null, 'No parent profile saved yet. Fill in the form to get started.');
+
+    renderProfileSummary('setup-child-summary', child.name ? [
+        ['Name', child.name],
+        ['Relationship', child.relationship || 'Not set'],
+        ['Email', child.email || 'Not set'],
+        ['Mobile', child.phone || 'Not set'],
+        ['Backup contact', child.backupName ? `${child.backupName} (${child.backupPhone || 'no phone'})` : 'Not set'],
+        ['SOS alerts', child.alerts && child.alerts.sos ? 'On' : 'Off'],
+        ['Geofence alerts', child.alerts && child.alerts.geofence ? 'On' : 'Off'],
+        ['Medication alerts', child.alerts && child.alerts.medication ? 'On' : 'Off']
+    ] : null, 'No caregiver profile saved yet. Fill in the form to get started.');
+}
+
+// Render a definition-style summary list, or an empty state message
+function renderProfileSummary(containerId, rows, emptyMessage) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    if (!rows) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-gray-500';
+        empty.textContent = emptyMessage;
+        container.appendChild(empty);
+        return;
+    }
+
+    rows.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'flex justify-between gap-3 border-b border-gray-100 pb-1';
+
+        const labelEl = document.createElement('span');
+        labelEl.className = 'text-xs text-gray-500';
+        labelEl.textContent = label;
+
+        const valueEl = document.createElement('span');
+        valueEl.className = 'text-xs font-semibold text-gray-900 text-right break-words';
+        valueEl.textContent = value;
+
+        row.appendChild(labelEl);
+        row.appendChild(valueEl);
+        container.appendChild(row);
+    });
+}
+
+// --- Emergency numbers by IP location ------------------------------------
+
+// Fill the manual override dropdown with every country in the offline directory
+function populateEmergencyCountries() {
+    const select = document.getElementById('emergency-country-select');
+    select.innerHTML = '';
+
+    Object.keys(EMERGENCY_NUMBERS)
+        .sort((a, b) => EMERGENCY_NUMBERS[a].country.localeCompare(EMERGENCY_NUMBERS[b].country))
+        .forEach((code) => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = EMERGENCY_NUMBERS[code].country;
+            select.appendChild(option);
+        });
+}
+
+// Look up the directory entry for the currently selected country
+function getEmergencyNumbers() {
+    const code = (state.emergency && state.emergency.countryCode) || '';
+    return EMERGENCY_NUMBERS[code] || EMERGENCY_NUMBERS.DEFAULT;
+}
+
+// Manual country override from the dropdown
+function handleEmergencyCountryChange(e) {
+    const code = e.target.value;
+    state.emergency = {
+        countryCode: code,
+        label: EMERGENCY_NUMBERS[code] ? EMERGENCY_NUMBERS[code].country : EMERGENCY_NUMBERS.DEFAULT.country,
+        source: 'manual',
+        detectedAt: new Date().toISOString()
+    };
+    saveState();
+    renderEmergencyNumbers();
+}
+
+/**
+ * Resolve the visitor's country from their IP address and store the matching
+ * emergency service numbers. Falls back to the international 112 entry when
+ * the lookup is unavailable (offline, blocked, or rate limited).
+ */
+function detectEmergencyLocation(force) {
+    if (!force && state.emergency && state.emergency.source === 'manual') {
+        renderEmergencyNumbers();
+        return Promise.resolve(getEmergencyNumbers());
+    }
+
+    if (typeof fetch !== 'function') {
+        applyEmergencyLocation('', '', 'fallback');
+        return Promise.resolve(getEmergencyNumbers());
+    }
+
+    const locationEl = document.getElementById('emergency-location');
+    if (locationEl) locationEl.textContent = 'Detecting location…';
+
+    return fetch('https://ipapi.co/json/', { headers: { Accept: 'application/json' } })
+        .then((response) => {
+            if (!response.ok) throw new Error('IP lookup failed');
+            return response.json();
+        })
+        .then((data) => {
+            const code = (data && (data.country_code || data.country) || '').toUpperCase();
+            const place = [data && data.city, data && (data.country_name || data.country)]
+                .filter(Boolean)
+                .join(', ');
+            applyEmergencyLocation(code, place, 'ip');
+            return getEmergencyNumbers();
+        })
+        .catch(() => {
+            applyEmergencyLocation('', '', 'fallback');
+            return getEmergencyNumbers();
+        });
+}
+
+// Store a resolved location and repaint the emergency numbers card
+function applyEmergencyLocation(countryCode, label, source) {
+    const code = EMERGENCY_NUMBERS[countryCode] ? countryCode : 'DEFAULT';
+    state.emergency = {
+        countryCode: code,
+        label: label || EMERGENCY_NUMBERS[code].country,
+        source: source,
+        detectedAt: new Date().toISOString()
+    };
+    saveState();
+    renderEmergencyNumbers();
+}
+
+// Paint the emergency numbers card and the SOS banner shortcut
+function renderEmergencyNumbers() {
+    const numbers = getEmergencyNumbers();
+    const grid = document.getElementById('emergency-numbers-grid');
+    const locationEl = document.getElementById('emergency-location');
+    const noteEl = document.getElementById('emergency-numbers-note');
+    const select = document.getElementById('emergency-country-select');
+    const bannerNumber = document.getElementById('sos-local-number');
+
+    if (select) select.value = state.emergency.countryCode || 'DEFAULT';
+    if (bannerNumber) bannerNumber.textContent = numbers.general;
+
+    if (locationEl) {
+        locationEl.textContent = state.emergency.label || numbers.country;
+    }
+
+    if (noteEl) {
+        if (state.emergency.source === 'manual') {
+            noteEl.textContent = `Country selected manually: ${numbers.country}. Numbers are stored offline in the app.`;
+        } else if (state.emergency.source === 'ip') {
+            noteEl.textContent = `Detected from your IP address. Change the country above if it is wrong.`;
+        } else {
+            noteEl.textContent = 'IP location unavailable - showing the international 112 emergency line. Pick your country above.';
+        }
+    }
+
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    [
+        ['Police', numbers.police, 'bg-blue-50 border-blue-100 text-blue-900'],
+        ['Ambulance', numbers.ambulance, 'bg-red-50 border-red-100 text-red-900'],
+        ['Fire', numbers.fire, 'bg-orange-50 border-orange-100 text-orange-900'],
+        ['General', numbers.general, 'bg-gray-50 border-gray-100 text-gray-900']
+    ].forEach(([label, number, classes]) => {
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border ${classes}`;
+
+        const title = document.createElement('p');
+        title.className = 'text-[10px] uppercase font-bold opacity-70';
+        title.textContent = label;
+
+        const link = document.createElement('a');
+        link.className = 'text-xl font-extrabold block mt-1 hover:underline';
+        link.href = `tel:${number}`;
+        link.textContent = number;
+
+        card.appendChild(title);
+        card.appendChild(link);
+        grid.appendChild(card);
+    });
 }
 
 // Trigger SOS panic button emergency protocol
@@ -1341,4 +1829,13 @@ if (typeof window !== 'undefined') {
     window.handleMemoryFlip = handleMemoryFlip;
     window.triggerVoiceCommandSim = triggerVoiceCommandSim;
     window.updateUI = updateUI;
+    window.toggleNav = toggleNav;
+    window.openNav = openNav;
+    window.closeNav = closeNav;
+    window.renderSetupForms = renderSetupForms;
+    window.renderEmergencyNumbers = renderEmergencyNumbers;
+    window.detectEmergencyLocation = detectEmergencyLocation;
+    window.getEmergencyNumbers = getEmergencyNumbers;
+    window.hydrateFromDatabase = hydrateFromDatabase;
+    window.EMERGENCY_NUMBERS = EMERGENCY_NUMBERS;
 }

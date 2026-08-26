@@ -624,4 +624,298 @@ describe('Basa Dashboard Unit Tests', () => {
     window.updateUI();
     expect(document.getElementById('overview-log-timeline').textContent).toContain('No activity logged today yet.');
   });
+
+  test('hamburger menu opens, closes and hides the navigation drawer', () => {
+    require('../../app.js');
+
+    const hamburger = document.getElementById('btn-hamburger');
+    const overlay = document.getElementById('nav-overlay');
+
+    // Drawer starts closed
+    expect(document.body.classList.contains('nav-open')).toBe(false);
+    expect(overlay.classList.contains('hidden')).toBe(true);
+    expect(hamburger.getAttribute('aria-expanded')).toBe('false');
+
+    // Opening via the hamburger button
+    hamburger.dispatchEvent(new Event('click'));
+    expect(document.body.classList.contains('nav-open')).toBe(true);
+    expect(overlay.classList.contains('hidden')).toBe(false);
+    expect(hamburger.getAttribute('aria-expanded')).toBe('true');
+
+    // Toggling closes it again
+    hamburger.dispatchEvent(new Event('click'));
+    expect(document.body.classList.contains('nav-open')).toBe(false);
+
+    // Overlay click closes the drawer
+    window.openNav();
+    overlay.dispatchEvent(new Event('click'));
+    expect(document.body.classList.contains('nav-open')).toBe(false);
+
+    // Dedicated close button
+    window.openNav();
+    document.getElementById('btn-close-nav').dispatchEvent(new Event('click'));
+    expect(document.body.classList.contains('nav-open')).toBe(false);
+
+    // Escape key closes the drawer, other keys do not
+    window.openNav();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'A' }));
+    expect(document.body.classList.contains('nav-open')).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(document.body.classList.contains('nav-open')).toBe(false);
+
+    // Selecting a navigation entry closes the drawer and switches panels
+    window.openNav();
+    document.querySelector("button[data-tab='vault']").dispatchEvent(new Event('click'));
+    expect(window.state.activeTab).toBe('vault');
+    expect(document.body.classList.contains('nav-open')).toBe(false);
+  });
+
+  test('parent setup page saves, persists and re-renders the profile', () => {
+    require('../../app.js');
+
+    expect(document.getElementById('setup-parent-summary').textContent).toContain('No parent profile saved yet');
+
+    document.getElementById('parent-name').value = 'Ram Shrestha';
+    document.getElementById('parent-dob').value = '1948-04-12';
+    document.getElementById('parent-phone').value = '+977 9800000000';
+    document.getElementById('parent-blood').value = 'O+';
+    document.getElementById('parent-address').value = 'Basa House, Kathmandu';
+    document.getElementById('parent-conditions').value = 'Hypertension';
+    document.getElementById('parent-allergies').value = 'Penicillin';
+    document.getElementById('parent-doctor').value = 'Dr. Roberts';
+    document.getElementById('parent-doctor-phone').value = '+977 14000000';
+    document.getElementById('parent-large-text').checked = true;
+    document.getElementById('setup-parent-form').dispatchEvent(new Event('submit'));
+
+    expect(window.state.parentProfile.name).toBe('Ram Shrestha');
+    expect(window.state.parentProfile.largeText).toBe(true);
+    // Large text preference switches the dashboard into the parent view
+    expect(window.state.viewMode).toBe('parent');
+    expect(document.body.classList.contains('parent-mode')).toBe(true);
+
+    const summary = document.getElementById('setup-parent-summary').textContent;
+    expect(summary).toContain('Ram Shrestha');
+    expect(summary).toContain('Dr. Roberts');
+
+    // Persisted into the storage layer
+    expect(JSON.parse(window.localStorage.getItem('basa_parentProfile')).address).toBe('Basa House, Kathmandu');
+  });
+
+  test('parent setup summary handles partially filled profiles', () => {
+    window.localStorage.setItem('basa_parentProfile', JSON.stringify({ name: 'Solo Parent' }));
+    require('../../app.js');
+
+    const summary = document.getElementById('setup-parent-summary').textContent;
+    expect(summary).toContain('Solo Parent');
+    expect(summary).toContain('None recorded');
+    expect(summary).toContain('Disabled');
+    expect(document.getElementById('parent-large-text').checked).toBe(false);
+  });
+
+  test('child setup page saves caregiver details and alert preferences', () => {
+    require('../../app.js');
+
+    expect(document.getElementById('setup-child-summary').textContent).toContain('No caregiver profile saved yet');
+
+    document.getElementById('child-name').value = 'Charles';
+    document.getElementById('child-relationship').value = 'Daughter';
+    document.getElementById('child-email').value = 'charles@example.com';
+    document.getElementById('child-phone').value = '+1 555 0100';
+    document.getElementById('child-backup-name').value = 'Emma';
+    document.getElementById('child-backup-phone').value = '+1 555 0111';
+    document.getElementById('child-alert-geofence').checked = false;
+    document.getElementById('setup-child-form').dispatchEvent(new Event('submit'));
+
+    expect(window.state.childProfile.name).toBe('Charles');
+    expect(window.state.childProfile.relationship).toBe('Daughter');
+    expect(window.state.childProfile.alerts).toEqual({ sos: true, geofence: false, medication: true });
+
+    const summary = document.getElementById('setup-child-summary').textContent;
+    expect(summary).toContain('Charles');
+    expect(summary).toContain('Emma');
+    expect(summary).toContain('Off');
+
+    // Reloading the app restores the saved values into the form
+    jest.resetModules();
+    require('../../app.js');
+    expect(document.getElementById('child-name').value).toBe('Charles');
+    expect(document.getElementById('child-alert-geofence').checked).toBe(false);
+  });
+
+  test('child setup summary falls back gracefully with missing contacts', () => {
+    window.localStorage.setItem('basa_childProfile', JSON.stringify({ name: 'Sam', alerts: { sos: false } }));
+    require('../../app.js');
+
+    const summary = document.getElementById('setup-child-summary').textContent;
+    expect(summary).toContain('Sam');
+    expect(summary).toContain('Not set');
+    expect(document.getElementById('child-alert-sos').checked).toBe(false);
+  });
+
+  test('emergency numbers fall back to the international line without IP lookup', () => {
+    require('../../app.js');
+
+    // JSDOM has no fetch, so the fallback entry is used
+    expect(window.state.emergency.countryCode).toBe('DEFAULT');
+    expect(window.getEmergencyNumbers().general).toBe('112');
+    expect(document.getElementById('emergency-numbers-grid').textContent).toContain('112');
+    expect(document.getElementById('emergency-numbers-note').textContent).toContain('IP location unavailable');
+    expect(document.getElementById('sos-local-number').textContent).toBe('112');
+
+    // Country dropdown is populated from the offline directory
+    const select = document.getElementById('emergency-country-select');
+    expect(select.options.length).toBe(Object.keys(window.EMERGENCY_NUMBERS).length);
+  });
+
+  test('emergency numbers resolve from the IP location lookup', async () => {
+    window.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ country_code: 'np', city: 'Kathmandu', country_name: 'Nepal' })
+    });
+
+    require('../../app.js');
+    await window.detectEmergencyLocation(true);
+
+    expect(window.fetch).toHaveBeenCalledWith('https://ipapi.co/json/', expect.any(Object));
+    expect(window.state.emergency.countryCode).toBe('NP');
+    expect(window.state.emergency.source).toBe('ip');
+    expect(document.getElementById('emergency-location').textContent).toBe('Kathmandu, Nepal');
+    expect(document.getElementById('emergency-numbers-grid').textContent).toContain('102');
+    expect(document.getElementById('emergency-numbers-note').textContent).toContain('Detected from your IP address');
+    expect(document.getElementById('sos-local-number').textContent).toBe('112');
+
+    delete window.fetch;
+  });
+
+  test('emergency numbers handle failed and rejected IP lookups', async () => {
+    window.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) });
+    require('../../app.js');
+
+    await window.detectEmergencyLocation(true);
+    expect(window.state.emergency.countryCode).toBe('DEFAULT');
+    expect(window.state.emergency.source).toBe('fallback');
+
+    window.fetch = jest.fn().mockRejectedValue(new Error('offline'));
+    await window.detectEmergencyLocation(true);
+    expect(window.state.emergency.countryCode).toBe('DEFAULT');
+
+    // Unknown country codes also fall back to the international entry
+    window.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ country_code: 'ZZ' }) });
+    await window.detectEmergencyLocation(true);
+    expect(window.state.emergency.countryCode).toBe('DEFAULT');
+
+    delete window.fetch;
+  });
+
+  test('manual country override wins over IP detection', async () => {
+    window.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ country_code: 'US', city: 'Austin', country_name: 'United States' })
+    });
+    require('../../app.js');
+
+    const select = document.getElementById('emergency-country-select');
+    select.value = 'JP';
+    select.dispatchEvent(new Event('change'));
+
+    expect(window.state.emergency.countryCode).toBe('JP');
+    expect(window.state.emergency.source).toBe('manual');
+    expect(document.getElementById('emergency-location').textContent).toBe('Japan');
+    expect(document.getElementById('emergency-numbers-note').textContent).toContain('selected manually');
+
+    // A non-forced detection keeps the manual choice
+    await window.detectEmergencyLocation(false);
+    expect(window.state.emergency.countryCode).toBe('JP');
+
+    // A forced detection overrides it again
+    await window.detectEmergencyLocation(true);
+    expect(window.state.emergency.countryCode).toBe('US');
+
+    delete window.fetch;
+  });
+
+  test('state hydrates asynchronously from the NoSQL database when available', async () => {
+    const stored = {
+      routines: [{ id: 7, name: 'DB Routine', time: '09:00', category: 'medication', dosage: '1 pill', completed: false }],
+      viewMode: 'parent',
+      geofence_radius: 175
+    };
+
+    window.BasaDB = {
+      isAvailable: () => true,
+      engine: () => 'PouchDB (IndexedDB)',
+      get: (key, fallback) => {
+        const raw = window.localStorage.getItem(`basa_${key}`);
+        if (raw === null) return fallback;
+        try {
+          const parsed = JSON.parse(raw);
+          return parsed === null ? fallback : parsed;
+        } catch (err) {
+          return fallback;
+        }
+      },
+      getString: (key, fallback) => {
+        const raw = window.localStorage.getItem(`basa_${key}`);
+        if (raw === null) return fallback;
+        try {
+          const parsed = JSON.parse(raw);
+          return typeof parsed === 'string' ? parsed : raw;
+        } catch (err) {
+          return raw;
+        }
+      },
+      set: jest.fn((key, value) => window.localStorage.setItem(`basa_${key}`, JSON.stringify(value))),
+      setString: jest.fn((key, value) => window.localStorage.setItem(`basa_${key}`, String(value))),
+      hydrate: jest.fn(() => {
+        Object.keys(stored).forEach((key) => {
+          window.localStorage.setItem(`basa_${key}`, JSON.stringify(stored[key]));
+        });
+        return Promise.resolve(stored);
+      })
+    };
+
+    require('../../app.js');
+    await window.hydrateFromDatabase();
+
+    expect(window.BasaDB.hydrate).toHaveBeenCalled();
+    expect(window.state.routines[0].name).toBe('DB Routine');
+    expect(window.state.viewMode).toBe('parent');
+    expect(window.state.geofence.radius).toBe(175);
+    expect(document.getElementById('geofence-radius-val').textContent).toBe('175 meters');
+    expect(document.getElementById('side-storage-engine').textContent).toContain('PouchDB');
+    expect(window.BasaDB.set).toHaveBeenCalled();
+
+    delete window.BasaDB;
+  });
+
+  test('an empty NoSQL database is seeded with the current state', async () => {
+    window.BasaDB = {
+      isAvailable: () => true,
+      engine: () => 'PouchDB (IndexedDB)',
+      get: (key, fallback) => fallback,
+      getString: (key, fallback) => fallback,
+      set: jest.fn(),
+      setString: jest.fn(),
+      hydrate: jest.fn(() => Promise.resolve({}))
+    };
+
+    require('../../app.js');
+    const hydrated = await window.hydrateFromDatabase();
+
+    expect(hydrated).toBe(false);
+    expect(window.BasaDB.set).toHaveBeenCalledWith('routines', expect.any(Array));
+
+    delete window.BasaDB;
+  });
+
+  test('hydration is skipped when the NoSQL engine is unavailable', async () => {
+    require('../../app.js');
+    await expect(window.hydrateFromDatabase()).resolves.toBe(false);
+  });
+
+  test('corrupted stored values fall back to the seed data', () => {
+    window.localStorage.setItem('basa_routines', '{not json');
+    require('../../app.js');
+    expect(window.state.routines.length).toBe(3);
+  });
 });
