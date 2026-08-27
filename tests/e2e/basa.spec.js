@@ -369,6 +369,40 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     await expect(page.locator("#child-alert-medication")).not.toBeChecked();
   });
 
+  test("Setup pages support more than one parent and caregiver", async ({ page }) => {
+    await openTab(page, "setup-parent");
+
+    await page.fill("#parent-name", "Ram Bahadur Shrestha");
+    await page.click("text=Save Parent Setup");
+    await page.click("#btn-add-parent");
+    await expect(page.locator("#parent-name")).toHaveValue("");
+    await page.fill("#parent-name", "Sita Shrestha");
+    await page.click("text=Save Parent Setup");
+
+    const parentList = page.locator("#setup-parent-list");
+    await expect(parentList).toContainText("Ram Bahadur Shrestha");
+    await expect(parentList).toContainText("Sita Shrestha");
+
+    await openTab(page, "setup-child");
+    await page.fill("#child-name", "Charles");
+    await page.click("text=Save Caregiver Setup");
+    await page.click("#btn-add-child");
+    await page.fill("#child-name", "Emma");
+    await page.selectOption("#child-relationship", "Professional Caregiver");
+    await page.click("text=Save Caregiver Setup");
+
+    const childList = page.locator("#setup-child-list");
+    await expect(childList).toContainText("Charles");
+    await expect(childList).toContainText("Emma");
+
+    // Both lists survive a reload and an earlier profile can be edited again
+    await page.reload();
+    await openTab(page, "setup-parent");
+    await expect(page.locator("#setup-parent-list")).toContainText("Ram Bahadur Shrestha");
+    await page.locator("#setup-parent-list button", { hasText: "Edit" }).first().click();
+    await expect(page.locator("#parent-name")).toHaveValue("Ram Bahadur Shrestha");
+  });
+
   test("Emergency numbers card resolves numbers for the detected location", async ({ page }) => {
     const grid = page.locator("#emergency-numbers-grid");
     await expect(grid).toContainText("Police");

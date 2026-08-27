@@ -681,9 +681,6 @@ function renderSetupForms() {
     document.getElementById('setup-child-form-title').textContent =
         childIsNew ? 'Add Child / Caregiver' : `Child / Caregiver Setup (${state.activeChildIndex + 1} of ${state.childProfiles.length})`;
 
-    document.getElementById('btn-save-parent').textContent = parentIsNew ? 'Add Parent Setup' : 'Save Parent Setup';
-    document.getElementById('btn-save-child').textContent = childIsNew ? 'Add Caregiver Setup' : 'Save Caregiver Setup';
-
     renderProfileList('setup-parent-list', state.parentProfiles, state.activeParentIndex,
         p => p.name, p => p.phone || p.address || 'No contact details',
         selectParentProfile, removeParentProfile,
