@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.54% </span>
+                <span class="strong">97.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1309/1342</span>
+                <span class='fraction'>1315/1349</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">87.68% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>534/609</span>
+                <span class='fraction'>541/617</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97% </span>
+                <span class="strong">97.02% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>162/167</span>
+                <span class='fraction'>163/168</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">99.03% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1232/1244</span>
+                <span class='fraction'>1237/1249</span>
             </div>
         
             
@@ -2601,7 +2601,17 @@
 <a name='L2536'></a><a href='#L2536'>2536</a>
 <a name='L2537'></a><a href='#L2537'>2537</a>
 <a name='L2538'></a><a href='#L2538'>2538</a>
-<a name='L2539'></a><a href='#L2539'>2539</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L2539'></a><a href='#L2539'>2539</a>
+<a name='L2540'></a><a href='#L2540'>2540</a>
+<a name='L2541'></a><a href='#L2541'>2541</a>
+<a name='L2542'></a><a href='#L2542'>2542</a>
+<a name='L2543'></a><a href='#L2543'>2543</a>
+<a name='L2544'></a><a href='#L2544'>2544</a>
+<a name='L2545'></a><a href='#L2545'>2545</a>
+<a name='L2546'></a><a href='#L2546'>2546</a>
+<a name='L2547'></a><a href='#L2547'>2547</a>
+<a name='L2548'></a><a href='#L2548'>2548</a>
+<a name='L2549'></a><a href='#L2549'>2549</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">51x</span>
@@ -3175,21 +3185,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
-<span class="cline-any cline-yes">144240x</span>
+<span class="cline-any cline-yes">144246x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">110x</span>
-<span class="cline-any cline-yes">144240x</span>
-<span class="cline-any cline-yes">144240x</span>
+<span class="cline-any cline-yes">144246x</span>
+<span class="cline-any cline-yes">144246x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">140324x</span>
-<span class="cline-any cline-yes">124052x</span>
-<span class="cline-any cline-yes">14362x</span>
+<span class="cline-any cline-yes">140330x</span>
+<span class="cline-any cline-yes">124055x</span>
+<span class="cline-any cline-yes">14365x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">30634x</span>
-<span class="cline-any cline-yes">30634x</span>
-<span class="cline-any cline-yes">30634x</span>
-<span class="cline-any cline-yes">30634x</span>
+<span class="cline-any cline-yes">30640x</span>
+<span class="cline-any cline-yes">30640x</span>
+<span class="cline-any cline-yes">30640x</span>
+<span class="cline-any cline-yes">30640x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">110x</span>
@@ -3425,6 +3435,16 @@
 <span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">130x</span>
+<span class="cline-any cline-yes">130x</span>
+<span class="cline-any cline-yes">130x</span>
+<span class="cline-any cline-yes">130x</span>
+<span class="cline-any cline-yes">130x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5949,10 +5969,10 @@ function renderSetupForms() {
     const parentIsNew = state.activeParentIndex &gt;= state.parentProfiles.length;
     const childIsNew = state.activeChildIndex &gt;= state.childProfiles.length;
 &nbsp;
-    document.getElementById('setup-parent-form-title').textContent =
-        parentIsNew ? 'Add Parent Profile' : `Parent Profile Setup (${state.activeParentIndex + 1} of ${state.parentProfiles.length})`;
-    document.getElementById('setup-child-form-title').textContent =
-        childIsNew ? 'Add Child / Caregiver' : `Child / Caregiver Setup (${state.activeChildIndex + 1} of ${state.childProfiles.length})`;
+    setFormTitle('setup-parent-form-title', parentIsNew ? 'Add Parent Profile' : 'Parent Profile Setup',
+        parentIsNew ? '' : ` (${state.activeParentIndex + 1} of ${state.parentProfiles.length})`);
+    setFormTitle('setup-child-form-title', childIsNew ? 'Add Child / Caregiver' : 'Child / Caregiver Setup',
+        childIsNew ? '' : ` (${state.activeChildIndex + 1} of ${state.childProfiles.length})`);
 &nbsp;
     renderProfileList('setup-parent-list', state.parentProfiles, state.activeParentIndex,
         p =&gt; p.name, p =&gt; p.phone || p.address || 'No contact details',
@@ -5963,6 +5983,16 @@ function renderSetupForms() {
         c =&gt; c.name, c =&gt; c.relationship || <span class="branch-1 cbranch-no" title="branch not covered" >'Caregiver',</span>
         selectChildProfile, removeChildProfile,
         'No caregivers added yet. Save the form to add the first one.');
+}
+&nbsp;
+// Render a form title as a translatable base phrase plus an untranslated numeric suffix,
+// so the i18n text-node walker can match the base phrase against the dictionary
+function setFormTitle(elementId, basePhrase, suffix) {
+    const el = document.getElementById(elementId);
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!el) <span class="cstat-no" title="statement not covered" >return;</span>
+    el.textContent = '';
+    el.appendChild(document.createTextNode(basePhrase));
+    if (suffix) el.appendChild(document.createTextNode(suffix));
 }
 &nbsp;
 // Render the switchable list of saved profiles with edit / remove controls
@@ -7684,7 +7714,7 @@ init();
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-27T10:46:27.589Z
+                at 2026-08-27T10:48:54.435Z
             </div>
         <script src="prettify.js"></script>
         <script>

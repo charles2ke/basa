@@ -808,10 +808,10 @@ function renderSetupForms() {
     const parentIsNew = state.activeParentIndex >= state.parentProfiles.length;
     const childIsNew = state.activeChildIndex >= state.childProfiles.length;
 
-    document.getElementById('setup-parent-form-title').textContent =
-        parentIsNew ? 'Add Parent Profile' : `Parent Profile Setup (${state.activeParentIndex + 1} of ${state.parentProfiles.length})`;
-    document.getElementById('setup-child-form-title').textContent =
-        childIsNew ? 'Add Child / Caregiver' : `Child / Caregiver Setup (${state.activeChildIndex + 1} of ${state.childProfiles.length})`;
+    setFormTitle('setup-parent-form-title', parentIsNew ? 'Add Parent Profile' : 'Parent Profile Setup',
+        parentIsNew ? '' : ` (${state.activeParentIndex + 1} of ${state.parentProfiles.length})`);
+    setFormTitle('setup-child-form-title', childIsNew ? 'Add Child / Caregiver' : 'Child / Caregiver Setup',
+        childIsNew ? '' : ` (${state.activeChildIndex + 1} of ${state.childProfiles.length})`);
 
     renderProfileList('setup-parent-list', state.parentProfiles, state.activeParentIndex,
         p => p.name, p => p.phone || p.address || 'No contact details',
@@ -822,6 +822,16 @@ function renderSetupForms() {
         c => c.name, c => c.relationship || 'Caregiver',
         selectChildProfile, removeChildProfile,
         'No caregivers added yet. Save the form to add the first one.');
+}
+
+// Render a form title as a translatable base phrase plus an untranslated numeric suffix,
+// so the i18n text-node walker can match the base phrase against the dictionary
+function setFormTitle(elementId, basePhrase, suffix) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.textContent = '';
+    el.appendChild(document.createTextNode(basePhrase));
+    if (suffix) el.appendChild(document.createTextNode(suffix));
 }
 
 // Render the switchable list of saved profiles with edit / remove controls
