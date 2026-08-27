@@ -45,8 +45,22 @@
             </div>
         </div>
 
-        <!-- Right Side: View Mode Switcher and Quick SOS -->
+        <!-- Right Side: Language, Theme, View Mode Switcher and Quick SOS -->
         <div class="flex items-center gap-2 sm:gap-4">
+            <!-- Language selector -->
+            <div class="flex items-center">
+                <label for="language-select" class="sr-only">Language</label>
+                <select id="language-select" class="bg-gray-100 border border-gray-200 text-gray-700 rounded-lg text-xs font-semibold px-2 py-1.5">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <!-- Dark / light theme toggle -->
+            <button id="btn-theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode"
+                class="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition shrink-0">
+                <span id="theme-toggle-icon" aria-hidden="true">🌙</span>
+            </button>
+
             <!-- View Selector Toggle -->
             <div class="bg-gray-100 p-0.5 rounded-lg flex items-center border border-gray-200">
                 <button id="btn-view-child" class="px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm bg-white text-indigo-600 transition-all duration-200">
@@ -1103,6 +1117,7 @@
     <!-- Script imports -->
     <script src="vendor/pouchdb.min.js"></script>
     <script src="db.js"></script>
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

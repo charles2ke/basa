@@ -76,7 +76,7 @@ jobs:
       - name: Build static files
         run: |
           mkdir -p dist/vendor
-          for f in index.html app.js db.js styles.css; do
+          for f in index.html app.js db.js i18n.js styles.css; do
             if [ -f "$f" ]; then
               cp "$f" dist/
             fi

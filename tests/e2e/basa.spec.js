@@ -403,6 +403,42 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     await expect(page.locator("#parent-name")).toHaveValue("Ram Bahadur Shrestha");
   });
 
+  test("Interface switches between English, Hindi and Bengali", async ({ page }) => {
+    await page.click("#btn-hamburger");
+    const overviewTab = page.locator("button[data-tab='overview'] span");
+    await expect(overviewTab).toHaveText("Dashboard Overview");
+
+    await page.selectOption("#language-select", "hi");
+    await expect(overviewTab).toHaveText("डैशबोर्ड अवलोकन");
+    await expect(page.locator("html")).toHaveAttribute("lang", "hi");
+
+    await page.selectOption("#language-select", "bn");
+    await expect(overviewTab).toHaveText("ড্যাশবোর্ড সারসংক্ষেপ");
+
+    // The choice is persisted across reloads
+    await page.reload();
+    await page.click("#btn-hamburger");
+    await expect(page.locator("button[data-tab='overview'] span")).toHaveText("ড্যাশবোর্ড সারসংক্ষেপ");
+
+    await page.selectOption("#language-select", "en");
+    await expect(page.locator("button[data-tab='overview'] span")).toHaveText("Dashboard Overview");
+  });
+
+  test("Dark and light mode can be toggled and persist", async ({ page }) => {
+    const body = page.locator("body");
+    await expect(body).not.toHaveClass(/dark-mode/);
+
+    await page.click("#btn-theme-toggle");
+    await expect(body).toHaveClass(/dark-mode/);
+    await expect(page.locator("#btn-theme-toggle")).toHaveAttribute("aria-pressed", "true");
+
+    await page.reload();
+    await expect(page.locator("body")).toHaveClass(/dark-mode/);
+
+    await page.click("#btn-theme-toggle");
+    await expect(page.locator("body")).not.toHaveClass(/dark-mode/);
+  });
+
   test("Emergency numbers card resolves numbers for the detected location", async ({ page }) => {
     const grid = page.locator("#emergency-numbers-grid");
     await expect(grid).toContainText("Police");

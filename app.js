@@ -3,6 +3,8 @@
 // Main State Object
 let state = {
     viewMode: 'child', // 'child' or 'parent'
+    language: 'en', // 'en', 'hi' (Hindi) or 'bn' (Bengali)
+    theme: 'light', // 'light' or 'dark'
     activeTab: 'overview',
     isEmergency: false,
     emergencyLog: [],
@@ -228,6 +230,8 @@ function loadStateFromStorage() {
     ]);
     state.viewMode = storageGetString('viewMode', 'child');
     state.iotMode = storageGetString('iotMode', 'normal');
+    state.language = storageGetString('language', DEFAULT_LANGUAGE);
+    state.theme = storageGetString('theme', DEFAULT_THEME);
     loadProfilesFromStorage();
     state.emergency = Object.assign({ countryCode: '', label: '', source: '', detectedAt: null }, storageGet('emergencyLocation', {}));
 
@@ -345,6 +349,13 @@ function init() {
     document.getElementById('btn-add-parent').addEventListener('click', startNewParentProfile);
     document.getElementById('btn-add-child').addEventListener('click', startNewChildProfile);
 
+    // Language picker and dark / light theme toggle
+    populateLanguageOptions();
+    document.getElementById('language-select').addEventListener('change', e => setLanguage(e.target.value));
+    document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
+    applyTheme(state.theme);
+    setLanguage(state.language);
+
     // Emergency numbers controls
     populateEmergencyCountries();
     document.getElementById('emergency-country-select').addEventListener('change', handleEmergencyCountryChange);
@@ -409,6 +420,8 @@ function saveState() {
     storageSet('geofence_logs', state.geofence.logs);
     storageSetString('viewMode', state.viewMode);
     storageSetString('iotMode', state.iotMode);
+    storageSetString('language', state.language);
+    storageSetString('theme', state.theme);
     storageSet('parentProfiles', state.parentProfiles);
     storageSet('childProfiles', state.childProfiles);
     storageSet('activeParentIndex', state.activeParentIndex);
@@ -499,6 +512,125 @@ function setNavOpen(open) {
         overlay.classList.add('hidden');
         trigger.setAttribute('aria-expanded', 'false');
     }
+}
+
+// --- Language & theme ----------------------------------------------------
+// Interface strings are keyed by their English wording in i18n.js, so any
+// phrase without a translation simply keeps the original English text.
+
+const DEFAULT_LANGUAGE = 'en';
+const DEFAULT_THEME = 'light';
+// Original English text of every translated text node, so switching languages
+// never translates an already translated string.
+const translationSources = new WeakMap();
+
+function availableLanguages() {
+    return typeof BASA_LANGUAGES !== 'undefined' && Array.isArray(BASA_LANGUAGES)
+        ? BASA_LANGUAGES
+        : [{ code: DEFAULT_LANGUAGE, label: 'English', htmlLang: 'en' }];
+}
+
+function languageDictionary(code) {
+    if (typeof BASA_TRANSLATIONS === 'undefined') return {};
+    return BASA_TRANSLATIONS[code] || {};
+}
+
+// Build the header language picker from the supported language list
+function populateLanguageOptions() {
+    const select = document.getElementById('language-select');
+    if (!select) return;
+
+    select.innerHTML = '';
+    availableLanguages().forEach(lang => {
+        const option = document.createElement('option');
+        option.value = lang.code;
+        option.textContent = lang.label;
+        select.appendChild(option);
+    });
+    select.value = state.language;
+}
+
+// Switch the interface language and persist the choice
+function setLanguage(code) {
+    const supported = availableLanguages().some(lang => lang.code === code);
+    state.language = supported ? code : DEFAULT_LANGUAGE;
+
+    const active = availableLanguages().find(lang => lang.code === state.language);
+    document.documentElement.setAttribute('lang', (active && active.htmlLang) || state.language);
+
+    const select = document.getElementById('language-select');
+    if (select && select.value !== state.language) select.value = state.language;
+
+    storageSetString('language', state.language);
+    translateDocument();
+}
+
+// Replace every known English phrase with its translation (or restore English)
+function translateDocument() {
+    const dictionary = languageDictionary(state.language);
+    const skipTags = ['SCRIPT', 'STYLE', 'OPTION', 'TEXTAREA'];
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node => {
+        const parent = node.parentNode;
+        if (!parent || skipTags.indexOf(parent.nodeName) !== -1) return;
+
+        if (!translationSources.has(node)) {
+            if (!node.nodeValue || !node.nodeValue.trim()) return;
+            translationSources.set(node, node.nodeValue);
+        }
+
+        const original = translationSources.get(node);
+        const key = original.trim();
+        const translated = dictionary[key];
+        node.nodeValue = translated ? original.replace(key, translated) : original;
+    });
+
+    translateAttribute('placeholder', dictionary);
+    translateAttribute('aria-label', dictionary);
+    translateAttribute('title', dictionary);
+}
+
+// Translate a single attribute across the document, keeping the English source
+function translateAttribute(attribute, dictionary) {
+    document.querySelectorAll(`[${attribute}]`).forEach(element => {
+        const cacheKey = `i18n${attribute.replace(/-/g, '')}`;
+        if (element.dataset[cacheKey] === undefined) {
+            element.dataset[cacheKey] = element.getAttribute(attribute);
+        }
+        const original = element.dataset[cacheKey];
+        const translated = dictionary[original.trim()];
+        element.setAttribute(attribute, translated || original);
+    });
+}
+
+// Apply the dark or light colour scheme and persist the choice
+function applyTheme(theme) {
+    state.theme = theme === 'dark' ? 'dark' : DEFAULT_THEME;
+    document.body.classList.toggle('dark-mode', state.theme === 'dark');
+
+    const toggle = document.getElementById('btn-theme-toggle');
+    if (toggle) {
+        const nextLabel = state.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+        toggle.setAttribute('aria-pressed', state.theme === 'dark' ? 'true' : 'false');
+        toggle.setAttribute('aria-label', nextLabel);
+        toggle.setAttribute('title', nextLabel);
+        const icon = document.getElementById('theme-toggle-icon');
+        if (icon) icon.textContent = state.theme === 'dark' ? '☀️' : '🌙';
+        // Drop the cached English attribute values so the new label is translated
+        delete toggle.dataset.i18narialabel;
+        delete toggle.dataset.i18ntitle;
+    }
+
+    storageSetString('theme', state.theme);
+    translateDocument();
+}
+
+function toggleTheme() {
+    applyTheme(state.theme === 'dark' ? 'light' : 'dark');
 }
 
 // --- Setup pages ---------------------------------------------------------
@@ -2351,6 +2483,9 @@ function updateUI() {
 
     // Wearable connection rows + manual sync status
     renderWearables();
+
+    // Re-translate freshly rendered content when a non-English language is active
+    translateDocument();
 }
 
 // Bind standard search updates inside records archive
@@ -2384,6 +2519,11 @@ if (typeof window !== 'undefined') {
     window.openNav = openNav;
     window.closeNav = closeNav;
     window.renderSetupForms = renderSetupForms;
+    window.setLanguage = setLanguage;
+    window.translateDocument = translateDocument;
+    window.applyTheme = applyTheme;
+    window.toggleTheme = toggleTheme;
+    window.BASA_LANGUAGES = availableLanguages();
     window.startNewParentProfile = startNewParentProfile;
     window.startNewChildProfile = startNewChildProfile;
     window.selectParentProfile = selectParentProfile;
