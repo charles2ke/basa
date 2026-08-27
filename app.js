@@ -3,6 +3,8 @@
 // Main State Object
 let state = {
     viewMode: 'child', // 'child' or 'parent'
+    language: 'en', // 'en', 'hi' (Hindi) or 'bn' (Bengali)
+    theme: 'light', // 'light' or 'dark'
     activeTab: 'overview',
     isEmergency: false,
     emergencyLog: [],
@@ -28,8 +30,12 @@ let state = {
     iotMode: 'normal', // 'normal' or 'anomaly'
     wearables: null, // Google Fit / Garmin / Whoop connection + sync metadata
     navOpen: false,
-    parentProfile: null,
-    childProfile: null,
+    parentProfiles: [], // every parent being cared for
+    childProfiles: [], // every child / caregiver receiving alerts
+    activeParentIndex: 0, // profile currently shown in the parent setup form
+    activeChildIndex: 0, // profile currently shown in the caregiver setup form
+    parentProfile: null, // convenience pointer to parentProfiles[activeParentIndex]
+    childProfile: null, // convenience pointer to childProfiles[activeChildIndex]
     emergency: {
         countryCode: '',
         label: '',
@@ -135,6 +141,39 @@ const emptyChildProfile = {
     alerts: { sos: true, geofence: true, medication: true }
 };
 
+// --- Multi-profile helpers ----------------------------------------------
+// Both parents and caregivers are stored as lists so a family can register
+// more than one parent being cared for and more than one child / caregiver.
+
+function normalizeParentProfile(raw) {
+    return Object.assign({}, emptyParentProfile, raw || {});
+}
+
+function normalizeChildProfile(raw) {
+    const profile = Object.assign({}, emptyChildProfile, raw || {});
+    profile.alerts = Object.assign({}, emptyChildProfile.alerts, profile.alerts);
+    return profile;
+}
+
+// Keep the convenience pointers in sync with the active index of each list
+function syncActiveProfiles() {
+    if (!Array.isArray(state.parentProfiles)) state.parentProfiles = [];
+    if (!Array.isArray(state.childProfiles)) state.childProfiles = [];
+
+    state.activeParentIndex = clampProfileIndex(state.activeParentIndex, state.parentProfiles);
+    state.activeChildIndex = clampProfileIndex(state.activeChildIndex, state.childProfiles);
+
+    state.parentProfile = state.parentProfiles[state.activeParentIndex] || normalizeParentProfile({});
+    state.childProfile = state.childProfiles[state.activeChildIndex] || normalizeChildProfile({});
+}
+
+// An index of list.length means "creating a new profile", which is allowed
+function clampProfileIndex(index, list) {
+    const value = Number.isInteger(index) ? index : 0;
+    if (value < 0 || value > list.length) return list.length ? 0 : 0;
+    return value;
+}
+
 // --- Persistence helpers -------------------------------------------------
 // All data lives in the NoSQL document database exposed by db.js (PouchDB on
 // IndexedDB). When that layer is unavailable the raw localStorage mirror is
@@ -191,9 +230,9 @@ function loadStateFromStorage() {
     ]);
     state.viewMode = storageGetString('viewMode', 'child');
     state.iotMode = storageGetString('iotMode', 'normal');
-    state.parentProfile = Object.assign({}, emptyParentProfile, storageGet('parentProfile', {}));
-    state.childProfile = Object.assign({}, emptyChildProfile, storageGet('childProfile', {}));
-    state.childProfile.alerts = Object.assign({}, emptyChildProfile.alerts, state.childProfile.alerts);
+    state.language = storageGetString('language', DEFAULT_LANGUAGE);
+    state.theme = storageGetString('theme', DEFAULT_THEME);
+    loadProfilesFromStorage();
     state.emergency = Object.assign({ countryCode: '', label: '', source: '', detectedAt: null }, storageGet('emergencyLocation', {}));
 
     // Wearable connections: merge stored flags on top of the known providers so
@@ -206,6 +245,28 @@ function loadStateFromStorage() {
     });
     defaults.lastSync = stored.lastSync || null;
     state.wearables = defaults;
+}
+
+// Read both profile lists, migrating the legacy single-profile documents
+function loadProfilesFromStorage() {
+    const storedParents = storageGet('parentProfiles', null);
+    const storedChildren = storageGet('childProfiles', null);
+    const legacyParent = storageGet('parentProfile', null);
+    const legacyChild = storageGet('childProfile', null);
+
+    const parents = Array.isArray(storedParents)
+        ? storedParents
+        : (legacyParent && legacyParent.name ? [legacyParent] : []);
+    const children = Array.isArray(storedChildren)
+        ? storedChildren
+        : (legacyChild && legacyChild.name ? [legacyChild] : []);
+
+    state.parentProfiles = parents.map(normalizeParentProfile);
+    state.childProfiles = children.map(normalizeChildProfile);
+    state.activeParentIndex = storageGet('activeParentIndex', 0);
+    state.activeChildIndex = storageGet('activeChildIndex', 0);
+
+    syncActiveProfiles();
 }
 
 // Initialize application state
@@ -285,6 +346,15 @@ function init() {
     // Setup pages (parent & child profiles)
     document.getElementById('setup-parent-form').addEventListener('submit', handleSaveParentSetup);
     document.getElementById('setup-child-form').addEventListener('submit', handleSaveChildSetup);
+    document.getElementById('btn-add-parent').addEventListener('click', startNewParentProfile);
+    document.getElementById('btn-add-child').addEventListener('click', startNewChildProfile);
+
+    // Language picker and dark / light theme toggle
+    populateLanguageOptions();
+    document.getElementById('language-select').addEventListener('change', e => setLanguage(e.target.value));
+    document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
+    applyTheme(state.theme);
+    setLanguage(state.language);
 
     // Emergency numbers controls
     populateEmergencyCountries();
@@ -350,6 +420,13 @@ function saveState() {
     storageSet('geofence_logs', state.geofence.logs);
     storageSetString('viewMode', state.viewMode);
     storageSetString('iotMode', state.iotMode);
+    storageSetString('language', state.language);
+    storageSetString('theme', state.theme);
+    storageSet('parentProfiles', state.parentProfiles);
+    storageSet('childProfiles', state.childProfiles);
+    storageSet('activeParentIndex', state.activeParentIndex);
+    storageSet('activeChildIndex', state.activeChildIndex);
+    // Legacy single-profile mirrors, kept so older builds still read a profile
     storageSet('parentProfile', state.parentProfile);
     storageSet('childProfile', state.childProfile);
     storageSet('emergencyLocation', state.emergency);
@@ -437,13 +514,132 @@ function setNavOpen(open) {
     }
 }
 
+// --- Language & theme ----------------------------------------------------
+// Interface strings are keyed by their English wording in i18n.js, so any
+// phrase without a translation simply keeps the original English text.
+
+const DEFAULT_LANGUAGE = 'en';
+const DEFAULT_THEME = 'light';
+// Original English text of every translated text node, so switching languages
+// never translates an already translated string.
+const translationSources = new WeakMap();
+
+function availableLanguages() {
+    return typeof BASA_LANGUAGES !== 'undefined' && Array.isArray(BASA_LANGUAGES)
+        ? BASA_LANGUAGES
+        : [{ code: DEFAULT_LANGUAGE, label: 'English', htmlLang: 'en' }];
+}
+
+function languageDictionary(code) {
+    if (typeof BASA_TRANSLATIONS === 'undefined') return {};
+    return BASA_TRANSLATIONS[code] || {};
+}
+
+// Build the header language picker from the supported language list
+function populateLanguageOptions() {
+    const select = document.getElementById('language-select');
+    if (!select) return;
+
+    select.innerHTML = '';
+    availableLanguages().forEach(lang => {
+        const option = document.createElement('option');
+        option.value = lang.code;
+        option.textContent = lang.label;
+        select.appendChild(option);
+    });
+    select.value = state.language;
+}
+
+// Switch the interface language and persist the choice
+function setLanguage(code) {
+    const supported = availableLanguages().some(lang => lang.code === code);
+    state.language = supported ? code : DEFAULT_LANGUAGE;
+
+    const active = availableLanguages().find(lang => lang.code === state.language);
+    document.documentElement.setAttribute('lang', (active && active.htmlLang) || state.language);
+
+    const select = document.getElementById('language-select');
+    if (select && select.value !== state.language) select.value = state.language;
+
+    storageSetString('language', state.language);
+    translateDocument();
+}
+
+// Replace every known English phrase with its translation (or restore English)
+function translateDocument() {
+    const dictionary = languageDictionary(state.language);
+    const skipTags = ['SCRIPT', 'STYLE', 'OPTION', 'TEXTAREA'];
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node => {
+        const parent = node.parentNode;
+        if (!parent || skipTags.indexOf(parent.nodeName) !== -1) return;
+
+        if (!translationSources.has(node)) {
+            if (!node.nodeValue || !node.nodeValue.trim()) return;
+            translationSources.set(node, node.nodeValue);
+        }
+
+        const original = translationSources.get(node);
+        const key = original.trim();
+        const translated = dictionary[key];
+        node.nodeValue = translated ? original.replace(key, translated) : original;
+    });
+
+    translateAttribute('placeholder', dictionary);
+    translateAttribute('aria-label', dictionary);
+    translateAttribute('title', dictionary);
+}
+
+// Translate a single attribute across the document, keeping the English source
+function translateAttribute(attribute, dictionary) {
+    document.querySelectorAll(`[${attribute}]`).forEach(element => {
+        const cacheKey = `i18n${attribute.replace(/-/g, '')}`;
+        if (element.dataset[cacheKey] === undefined) {
+            element.dataset[cacheKey] = element.getAttribute(attribute);
+        }
+        const original = element.dataset[cacheKey];
+        const translated = dictionary[original.trim()];
+        element.setAttribute(attribute, translated || original);
+    });
+}
+
+// Apply the dark or light colour scheme and persist the choice
+function applyTheme(theme) {
+    state.theme = theme === 'dark' ? 'dark' : DEFAULT_THEME;
+    document.body.classList.toggle('dark-mode', state.theme === 'dark');
+
+    const toggle = document.getElementById('btn-theme-toggle');
+    if (toggle) {
+        const nextLabel = state.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+        toggle.setAttribute('aria-pressed', state.theme === 'dark' ? 'true' : 'false');
+        toggle.setAttribute('aria-label', nextLabel);
+        toggle.setAttribute('title', nextLabel);
+        const icon = document.getElementById('theme-toggle-icon');
+        if (icon) icon.textContent = state.theme === 'dark' ? '☀️' : '🌙';
+        // Drop the cached English attribute values so the new label is translated
+        delete toggle.dataset.i18narialabel;
+        delete toggle.dataset.i18ntitle;
+    }
+
+    storageSetString('theme', state.theme);
+    translateDocument();
+}
+
+function toggleTheme() {
+    applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+}
+
 // --- Setup pages ---------------------------------------------------------
 
 // Persist the parent profile captured on the parent setup page
 function handleSaveParentSetup(e) {
     e.preventDefault();
 
-    state.parentProfile = {
+    const profile = {
         name: document.getElementById('parent-name').value.trim(),
         dob: document.getElementById('parent-dob').value,
         phone: document.getElementById('parent-phone').value.trim(),
@@ -455,6 +651,15 @@ function handleSaveParentSetup(e) {
         doctorPhone: document.getElementById('parent-doctor-phone').value.trim(),
         largeText: document.getElementById('parent-large-text').checked
     };
+
+    // Replace the profile being edited, or append a brand new parent
+    if (state.activeParentIndex >= 0 && state.activeParentIndex < state.parentProfiles.length) {
+        state.parentProfiles[state.activeParentIndex] = profile;
+    } else {
+        state.parentProfiles.push(profile);
+        state.activeParentIndex = state.parentProfiles.length - 1;
+    }
+    syncActiveProfiles();
 
     saveState();
     renderSetupForms();
@@ -469,7 +674,7 @@ function handleSaveParentSetup(e) {
 function handleSaveChildSetup(e) {
     e.preventDefault();
 
-    state.childProfile = {
+    const profile = {
         name: document.getElementById('child-name').value.trim(),
         relationship: document.getElementById('child-relationship').value,
         email: document.getElementById('child-email').value.trim(),
@@ -483,6 +688,67 @@ function handleSaveChildSetup(e) {
         }
     };
 
+    // Replace the profile being edited, or append a brand new caregiver
+    if (state.activeChildIndex >= 0 && state.activeChildIndex < state.childProfiles.length) {
+        state.childProfiles[state.activeChildIndex] = profile;
+    } else {
+        state.childProfiles.push(profile);
+        state.activeChildIndex = state.childProfiles.length - 1;
+    }
+    syncActiveProfiles();
+
+    saveState();
+    renderSetupForms();
+    updateUI();
+}
+
+// Show a blank form so an extra parent can be registered
+function startNewParentProfile() {
+    state.activeParentIndex = state.parentProfiles.length;
+    renderSetupForms();
+}
+
+// Show a blank form so an extra child / caregiver can be registered
+function startNewChildProfile() {
+    state.activeChildIndex = state.childProfiles.length;
+    renderSetupForms();
+}
+
+// Load an existing parent profile into the form and make it the active one
+function selectParentProfile(index) {
+    if (index < 0 || index >= state.parentProfiles.length) return;
+    state.activeParentIndex = index;
+    syncActiveProfiles();
+    saveState();
+    renderSetupForms();
+    updateUI();
+}
+
+// Load an existing caregiver profile into the form and make it the active one
+function selectChildProfile(index) {
+    if (index < 0 || index >= state.childProfiles.length) return;
+    state.activeChildIndex = index;
+    syncActiveProfiles();
+    saveState();
+    renderSetupForms();
+    updateUI();
+}
+
+function removeParentProfile(index) {
+    if (index < 0 || index >= state.parentProfiles.length) return;
+    state.parentProfiles.splice(index, 1);
+    if (state.activeParentIndex > index) state.activeParentIndex -= 1;
+    syncActiveProfiles();
+    saveState();
+    renderSetupForms();
+    updateUI();
+}
+
+function removeChildProfile(index) {
+    if (index < 0 || index >= state.childProfiles.length) return;
+    state.childProfiles.splice(index, 1);
+    if (state.activeChildIndex > index) state.activeChildIndex -= 1;
+    syncActiveProfiles();
     saveState();
     renderSetupForms();
     updateUI();
@@ -490,8 +756,10 @@ function handleSaveChildSetup(e) {
 
 // Prefill both setup forms and refresh their saved-profile summaries
 function renderSetupForms() {
-    const parent = state.parentProfile || Object.assign({}, emptyParentProfile);
-    const child = state.childProfile || Object.assign({}, emptyChildProfile);
+    // While adding a profile the active index points past the end of the list,
+    // which yields a blank template for the form.
+    const parent = state.parentProfiles[state.activeParentIndex] || normalizeParentProfile({});
+    const child = state.childProfiles[state.activeChildIndex] || normalizeChildProfile({});
 
     document.getElementById('parent-name').value = parent.name || '';
     document.getElementById('parent-dob').value = parent.dob || '';
@@ -536,6 +804,93 @@ function renderSetupForms() {
         ['Geofence alerts', child.alerts && child.alerts.geofence ? 'On' : 'Off'],
         ['Medication alerts', child.alerts && child.alerts.medication ? 'On' : 'Off']
     ] : null, 'No caregiver profile saved yet. Fill in the form to get started.');
+
+    const parentIsNew = state.activeParentIndex >= state.parentProfiles.length;
+    const childIsNew = state.activeChildIndex >= state.childProfiles.length;
+
+    setFormTitle('setup-parent-form-title', parentIsNew ? 'Add Parent Profile' : 'Parent Profile Setup',
+        parentIsNew ? '' : ` (${state.activeParentIndex + 1} of ${state.parentProfiles.length})`);
+    setFormTitle('setup-child-form-title', childIsNew ? 'Add Child / Caregiver' : 'Child / Caregiver Setup',
+        childIsNew ? '' : ` (${state.activeChildIndex + 1} of ${state.childProfiles.length})`);
+
+    renderProfileList('setup-parent-list', state.parentProfiles, state.activeParentIndex,
+        p => p.name, p => p.phone || p.address || 'No contact details',
+        selectParentProfile, removeParentProfile,
+        'No parents added yet. Save the form to add the first one.');
+
+    renderProfileList('setup-child-list', state.childProfiles, state.activeChildIndex,
+        c => c.name, c => c.relationship || 'Caregiver',
+        selectChildProfile, removeChildProfile,
+        'No caregivers added yet. Save the form to add the first one.');
+}
+
+// Render a form title as a translatable base phrase plus an untranslated numeric suffix,
+// so the i18n text-node walker can match the base phrase against the dictionary
+function setFormTitle(elementId, basePhrase, suffix) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.textContent = '';
+    el.appendChild(document.createTextNode(basePhrase));
+    if (suffix) el.appendChild(document.createTextNode(suffix));
+}
+
+// Render the switchable list of saved profiles with edit / remove controls
+function renderProfileList(containerId, profiles, activeIndex, titleFor, subtitleFor, onSelect, onRemove, emptyMessage) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!profiles.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-gray-500';
+        empty.textContent = emptyMessage;
+        container.appendChild(empty);
+        return;
+    }
+
+    profiles.forEach((profile, index) => {
+        const row = document.createElement('div');
+        row.className = index === activeIndex
+            ? 'flex items-center justify-between gap-2 border border-indigo-300 bg-indigo-50 rounded-lg p-2'
+            : 'flex items-center justify-between gap-2 border border-gray-200 rounded-lg p-2';
+
+        const info = document.createElement('div');
+        info.className = 'min-w-0';
+
+        const title = document.createElement('p');
+        title.className = 'text-sm font-semibold text-gray-800 truncate';
+        title.textContent = titleFor(profile) || 'Unnamed profile';
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'text-xs text-gray-500 truncate';
+        subtitle.textContent = subtitleFor(profile);
+
+        info.appendChild(title);
+        info.appendChild(subtitle);
+
+        const actions = document.createElement('div');
+        actions.className = 'flex items-center gap-1 shrink-0';
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'text-xs font-semibold text-indigo-600 hover:text-indigo-800 px-2 py-1';
+        editBtn.textContent = index === activeIndex ? 'Editing' : 'Edit';
+        editBtn.disabled = index === activeIndex;
+        editBtn.addEventListener('click', () => onSelect(index));
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'text-xs font-semibold text-red-600 hover:text-red-800 px-2 py-1';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => onRemove(index));
+
+        actions.appendChild(editBtn);
+        actions.appendChild(removeBtn);
+
+        row.appendChild(info);
+        row.appendChild(actions);
+        container.appendChild(row);
+    });
 }
 
 // Render a definition-style summary list, or an empty state message
@@ -2138,6 +2493,9 @@ function updateUI() {
 
     // Wearable connection rows + manual sync status
     renderWearables();
+
+    // Re-translate freshly rendered content when a non-English language is active
+    if (state.language !== DEFAULT_LANGUAGE) translateDocument();
 }
 
 // Bind standard search updates inside records archive
@@ -2171,6 +2529,17 @@ if (typeof window !== 'undefined') {
     window.openNav = openNav;
     window.closeNav = closeNav;
     window.renderSetupForms = renderSetupForms;
+    window.setLanguage = setLanguage;
+    window.translateDocument = translateDocument;
+    window.applyTheme = applyTheme;
+    window.toggleTheme = toggleTheme;
+    window.BASA_LANGUAGES = availableLanguages();
+    window.startNewParentProfile = startNewParentProfile;
+    window.startNewChildProfile = startNewChildProfile;
+    window.selectParentProfile = selectParentProfile;
+    window.selectChildProfile = selectChildProfile;
+    window.removeParentProfile = removeParentProfile;
+    window.removeChildProfile = removeChildProfile;
     window.renderEmergencyNumbers = renderEmergencyNumbers;
     window.detectEmergencyLocation = detectEmergencyLocation;
     window.getEmergencyNumbers = getEmergencyNumbers;

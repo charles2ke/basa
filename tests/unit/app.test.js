@@ -18,7 +18,9 @@ describe('Basa Dashboard Unit Tests', () => {
       'resolveEmergency', 'toggleRoutineComplete', 'deleteVital', 
       'renderVitalsChart', 'setIoTMode', 'initMemoryGame', 
       'handleMemoryFlip', 'triggerVoiceCommandSim', 'updateUI',
-      'toggleWearableConnection', 'syncWearables', 'renderWearables'
+      'toggleWearableConnection', 'syncWearables', 'renderWearables',
+      'setLanguage', 'translateDocument', 'applyTheme', 'toggleTheme',
+      'BASA_LANGUAGES', 'BASA_TRANSLATIONS'
     ];
     props.forEach(prop => {
       delete window[prop];
@@ -835,6 +837,149 @@ describe('Basa Dashboard Unit Tests', () => {
     expect(summary).toContain('Sam');
     expect(summary).toContain('Not set');
     expect(document.getElementById('child-alert-sos').checked).toBe(false);
+  });
+
+  test('more than one parent profile can be added, switched and removed', () => {
+    require('../../app.js');
+
+    expect(document.getElementById('setup-parent-list').textContent).toContain('No parents added yet');
+
+    document.getElementById('parent-name').value = 'Ram Shrestha';
+    document.getElementById('parent-phone').value = '+977 9800000000';
+    document.getElementById('setup-parent-form').dispatchEvent(new Event('submit'));
+
+    // Adding a second parent starts from a blank form
+    document.getElementById('btn-add-parent').dispatchEvent(new Event('click'));
+    expect(document.getElementById('parent-name').value).toBe('');
+
+    document.getElementById('parent-name').value = 'Sita Shrestha';
+    document.getElementById('setup-parent-form').dispatchEvent(new Event('submit'));
+
+    expect(window.state.parentProfiles.map(p => p.name)).toEqual(['Ram Shrestha', 'Sita Shrestha']);
+    expect(window.state.parentProfile.name).toBe('Sita Shrestha');
+    const list = document.getElementById('setup-parent-list').textContent;
+    expect(list).toContain('Ram Shrestha');
+    expect(list).toContain('Sita Shrestha');
+
+    // Both profiles survive a reload
+    jest.resetModules();
+    require('../../app.js');
+    expect(window.state.parentProfiles).toHaveLength(2);
+    expect(document.getElementById('parent-name').value).toBe('Sita Shrestha');
+
+    // Switching back re-populates the form with the first parent
+    window.selectParentProfile(0);
+    expect(document.getElementById('parent-name').value).toBe('Ram Shrestha');
+    expect(window.state.parentProfile.name).toBe('Ram Shrestha');
+
+    window.removeParentProfile(0);
+    expect(window.state.parentProfiles.map(p => p.name)).toEqual(['Sita Shrestha']);
+    expect(window.state.parentProfile.name).toBe('Sita Shrestha');
+  });
+
+  test('more than one caregiver profile can be added, switched and removed', () => {
+    require('../../app.js');
+
+    expect(document.getElementById('setup-child-list').textContent).toContain('No caregivers added yet');
+
+    document.getElementById('child-name').value = 'Charles';
+    document.getElementById('setup-child-form').dispatchEvent(new Event('submit'));
+
+    document.getElementById('btn-add-child').dispatchEvent(new Event('click'));
+    expect(document.getElementById('child-name').value).toBe('');
+    expect(document.getElementById('child-alert-sos').checked).toBe(true);
+
+    document.getElementById('child-name').value = 'Emma';
+    document.getElementById('child-relationship').value = 'Professional Caregiver';
+    document.getElementById('setup-child-form').dispatchEvent(new Event('submit'));
+
+    expect(window.state.childProfiles.map(c => c.name)).toEqual(['Charles', 'Emma']);
+    expect(window.state.childProfile.relationship).toBe('Professional Caregiver');
+
+    jest.resetModules();
+    require('../../app.js');
+    expect(window.state.childProfiles).toHaveLength(2);
+
+    window.selectChildProfile(0);
+    expect(document.getElementById('child-name').value).toBe('Charles');
+
+    window.removeChildProfile(1);
+    expect(window.state.childProfiles.map(c => c.name)).toEqual(['Charles']);
+    expect(window.state.childProfile.name).toBe('Charles');
+  });
+
+  test('legacy single profiles are migrated into the profile lists', () => {
+    window.localStorage.setItem('basa_parentProfile', JSON.stringify({ name: 'Solo Parent' }));
+    window.localStorage.setItem('basa_childProfile', JSON.stringify({ name: 'Solo Child' }));
+    require('../../app.js');
+
+    expect(window.state.parentProfiles.map(p => p.name)).toEqual(['Solo Parent']);
+    expect(window.state.childProfiles.map(c => c.name)).toEqual(['Solo Child']);
+    expect(window.state.parentProfile.name).toBe('Solo Parent');
+  });
+
+  test('interface can be switched to Hindi and Bengali and back to English', () => {
+    const i18n = require('../../i18n.js');
+    window.BASA_LANGUAGES = i18n.BASA_LANGUAGES;
+    window.BASA_TRANSLATIONS = i18n.BASA_TRANSLATIONS;
+    require('../../app.js');
+
+    const overviewTab = document.querySelector("button[data-tab='overview'] span");
+    expect(overviewTab.textContent).toBe('Dashboard Overview');
+    expect(document.getElementById('language-select').value).toBe('en');
+
+    window.setLanguage('hi');
+    expect(overviewTab.textContent).toBe('डैशबोर्ड अवलोकन');
+    expect(document.documentElement.getAttribute('lang')).toBe('hi');
+    expect(window.localStorage.getItem('basa_language')).toBe('hi');
+
+    window.setLanguage('bn');
+    expect(overviewTab.textContent).toBe('ড্যাশবোর্ড সারসংক্ষেপ');
+
+    window.setLanguage('en');
+    expect(overviewTab.textContent).toBe('Dashboard Overview');
+
+    // Unknown languages fall back to English
+    window.setLanguage('fr');
+    expect(window.state.language).toBe('en');
+  });
+
+  test('the saved language is restored on reload and applied to new content', () => {
+    const i18n = require('../../i18n.js');
+    window.BASA_LANGUAGES = i18n.BASA_LANGUAGES;
+    window.BASA_TRANSLATIONS = i18n.BASA_TRANSLATIONS;
+    window.localStorage.setItem('basa_language', 'hi');
+    require('../../app.js');
+
+    expect(window.state.language).toBe('hi');
+    expect(document.getElementById('language-select').value).toBe('hi');
+    expect(document.querySelector("button[data-tab='vault'] span").textContent).toBe('चिकित्सा तिजोरी');
+
+    // Re-rendered markup is translated too
+    window.updateUI();
+    expect(document.querySelector("button[data-tab='vault'] span").textContent).toBe('चिकित्सा तिजोरी');
+  });
+
+  test('dark and light mode can be toggled and are persisted', () => {
+    require('../../app.js');
+
+    expect(document.body.classList.contains('dark-mode')).toBe(false);
+
+    document.getElementById('btn-theme-toggle').dispatchEvent(new Event('click'));
+    expect(window.state.theme).toBe('dark');
+    expect(document.body.classList.contains('dark-mode')).toBe(true);
+    expect(document.getElementById('btn-theme-toggle').getAttribute('aria-pressed')).toBe('true');
+    expect(window.localStorage.getItem('basa_theme')).toBe('dark');
+
+    document.getElementById('btn-theme-toggle').dispatchEvent(new Event('click'));
+    expect(window.state.theme).toBe('light');
+    expect(document.body.classList.contains('dark-mode')).toBe(false);
+
+    // The stored theme is applied on the next load
+    window.localStorage.setItem('basa_theme', 'dark');
+    jest.resetModules();
+    require('../../app.js');
+    expect(document.body.classList.contains('dark-mode')).toBe(true);
   });
 
   test('emergency numbers fall back to the international line without IP lookup', () => {

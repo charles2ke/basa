@@ -195,3 +195,68 @@ body.nav-open #sidebar {
         padding: 0.65rem !important;
     }
 }
+
+/* ---------------------------------------------------------------------
+ * Dark mode
+ * The interface is built with Tailwind utility classes loaded from the CDN,
+ * so dark mode re-colours those utilities under body.dark-mode instead of
+ * duplicating a dark: variant on every element.
+ * ------------------------------------------------------------------- */
+body.dark-mode {
+    background-color: #0f172a; /* slate-900 */
+    color: #e2e8f0; /* slate-200 */
+}
+body.dark-mode .bg-white,
+body.dark-mode .bg-gray-50,
+body.dark-mode .bg-gray-100 {
+    background-color: #1e293b !important; /* slate-800 */
+}
+body.dark-mode header,
+body.dark-mode #sidebar {
+    background-color: #111827 !important; /* gray-900 */
+}
+body.dark-mode .border-gray-100,
+body.dark-mode .border-gray-200,
+body.dark-mode .border-gray-300 {
+    border-color: #334155 !important; /* slate-700 */
+}
+body.dark-mode .text-gray-900,
+body.dark-mode .text-gray-800,
+body.dark-mode .text-gray-700 {
+    color: #e2e8f0 !important;
+}
+body.dark-mode .text-gray-600,
+body.dark-mode .text-gray-500,
+body.dark-mode .text-gray-400 {
+    color: #94a3b8 !important; /* slate-400 */
+}
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #64748b; /* slate-500 */
+}
+body.dark-mode .tab-btn {
+    color: #cbd5e1; /* slate-300 */
+}
+body.dark-mode .tab-btn:hover {
+    color: #ffffff;
+    background-color: #334155;
+}
+body.dark-mode .tab-btn.active {
+    color: #c7d2fe; /* indigo-200 */
+    background-color: #312e81; /* indigo-900 */
+}
+body.dark-mode .tab-btn.active svg {
+    color: #c7d2fe;
+}
+body.dark-mode .memory-card-back {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+}
