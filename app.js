@@ -2485,7 +2485,7 @@ function updateUI() {
     renderWearables();
 
     // Re-translate freshly rendered content when a non-English language is active
-    translateDocument();
+    if (state.language !== DEFAULT_LANGUAGE) translateDocument();
 }
 
 // Bind standard search updates inside records archive
