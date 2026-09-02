@@ -36,8 +36,8 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
 - **Hamburger Navigation**: The main navigation lives in an off-canvas drawer opened from the header hamburger button on every screen size.
 - **Setup Pages**: Dedicated Parent Setup and Child/Caregiver Setup pages for profiles, contacts and alert preferences.
-- **Languages**: The whole interface can be switched between English, Hindi (हिन्दी) and Bengali (বাংলা) from the header language picker; the choice is remembered on the device.
-- **Dark & Light Mode**: A header toggle switches between the light and dark colour scheme, also remembered between visits.
+- **Languages**: The whole interface can be switched between English, Hindi (हिन्दी) and Bengali (বাংলা) from the language picker in the hamburger menu; the choice is remembered on the device.
+- **Dark & Light Mode**: A toggle in the hamburger menu switches between the light and dark colour scheme, also remembered between visits.
 - **Multiple Profiles**: Both setup pages keep a list of profiles, so several parents and several children/caregivers can be added, switched between and removed.
 - **Local Emergency Numbers**: Police, ambulance and fire numbers resolved from the visitor's IP location, with a manual country override. Each card is a `tel:` link, so tapping one opens the phone dialler on mobile.
 - **Offline NoSQL Storage**: All data is stored on-device in [PouchDB](https://pouchdb.com/), a free and open source NoSQL document database backed by IndexedDB.
@@ -84,17 +84,17 @@ Brain-training memory match game plus live speech-to-text voice commands (Web Sp
 ![Wellness games](docs/screenshots/wellness.png)
 
 ### Languages (English, Hindi, Bengali)
-The header language picker translates the interface into Hindi (हिन्दी) or Bengali (বাংলা); untranslated phrases fall back to English.
+The language picker in the hamburger drawer translates the interface into Hindi (हिन्दी) or Bengali (বাংলা); untranslated phrases fall back to English.
 
 ![Hindi interface](docs/screenshots/language-hindi.png)
 
 ### Dark Mode
-A header toggle switches the whole dashboard between the light and dark colour scheme.
+A toggle in the hamburger drawer switches the whole dashboard between the light and dark colour scheme.
 
 ![Dark mode dashboard](docs/screenshots/dark-mode.png)
 
 ### Hamburger Navigation
-The main navigation is tucked behind the header hamburger button and slides in as a drawer, closing on selection, backdrop click, or `Esc`.
+The main navigation, language picker and dark mode toggle are tucked behind the header hamburger button and slide in as a drawer, closing on selection, backdrop click, or `Esc`.
 
 ![Hamburger navigation drawer](docs/screenshots/hamburger-menu.png)
 
