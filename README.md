@@ -5,14 +5,14 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 <!-- LIVE_DEMO_START -->
 🚀 **Live site:** https://charles2ke.github.io/basa/
 
-**Latest deployment run:** https://github.com/charles2ke/basa/actions/runs/33065000421
+**Latest deployment run:** https://github.com/charles2ke/basa/actions/runs/33673455950
 <!-- LIVE_DEMO_END -->
 
 ## CI/CD Status
 <!-- BUILD_STATUS_START -->
 ![Build Status](https://github.com/charles2ke/basa/actions/workflows/ci.yml/badge.svg)
 
-**Last Automated Update:** Thu, 27 Aug 2026 10:54:41 GMT
+**Last Automated Update:** Wed, 02 Sep 2026 19:28:43 GMT
 <!-- BUILD_STATUS_END -->
 
 ## Test Coverage Metrics
