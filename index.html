@@ -45,22 +45,8 @@
             </div>
         </div>
 
-        <!-- Right Side: Language, Theme, View Mode Switcher and Quick SOS -->
+        <!-- Right Side: View Mode Switcher and Quick SOS -->
         <div class="flex items-center gap-2 sm:gap-4">
-            <!-- Language selector -->
-            <div class="flex items-center">
-                <label for="language-select" class="sr-only">Language</label>
-                <select id="language-select" class="bg-gray-100 border border-gray-200 text-gray-700 rounded-lg text-xs font-semibold px-2 py-1.5">
-                    <!-- Populated dynamically -->
-                </select>
-            </div>
-
-            <!-- Dark / light theme toggle -->
-            <button id="btn-theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode"
-                class="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition shrink-0">
-                <span id="theme-toggle-icon" aria-hidden="true">🌙</span>
-            </button>
-
             <!-- View Selector Toggle -->
             <div class="bg-gray-100 p-0.5 rounded-lg flex items-center border border-gray-200">
                 <button id="btn-view-child" class="px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm bg-white text-indigo-600 transition-all duration-200">
@@ -140,6 +126,21 @@
 
             <!-- Sidebar Info / Bottom Stats -->
             <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+                <!-- Language selector and dark / light theme toggle -->
+                <div class="space-y-2">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Preferences</p>
+                    <div class="flex items-center gap-2">
+                        <label for="language-select" class="sr-only">Language</label>
+                        <select id="language-select" class="flex-grow bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-semibold px-2 py-1.5">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button id="btn-theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode"
+                            class="p-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition shrink-0">
+                            <span id="theme-toggle-icon" aria-hidden="true">🌙</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="text-xs text-gray-600">
                     <p class="font-bold">Home Ambient Stats</p>
                     <div class="mt-1 flex justify-between">

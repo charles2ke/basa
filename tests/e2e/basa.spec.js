@@ -428,6 +428,8 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     const body = page.locator("body");
     await expect(body).not.toHaveClass(/dark-mode/);
 
+    // The theme toggle lives inside the hamburger drawer
+    await page.click("#btn-hamburger");
     await page.click("#btn-theme-toggle");
     await expect(body).toHaveClass(/dark-mode/);
     await expect(page.locator("#btn-theme-toggle")).toHaveAttribute("aria-pressed", "true");
@@ -435,6 +437,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     await page.reload();
     await expect(page.locator("body")).toHaveClass(/dark-mode/);
 
+    await page.click("#btn-hamburger");
     await page.click("#btn-theme-toggle");
     await expect(page.locator("body")).not.toHaveClass(/dark-mode/);
   });
