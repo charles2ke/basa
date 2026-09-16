@@ -43,6 +43,12 @@
                 <span class="w-2.5 h-2.5 bg-yellow-500 rounded-full mr-2 animate-pulse"></span>
                 IoT Status: <span id="ambient-alert-text" class="ml-1">No Activity Warning</span>
             </div>
+            <!-- Overdue medication / routine reminder counter -->
+            <button id="reminder-alert-badge" type="button" title="Show overdue reminders"
+                class="hidden items-center bg-amber-50 text-amber-700 border border-amber-200 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 hover:bg-amber-100">
+                <span class="w-2.5 h-2.5 bg-amber-500 rounded-full mr-2 animate-pulse"></span>
+                Reminders: <span id="reminder-alert-text" class="ml-1" data-i18n-managed="true">0 overdue</span>
+            </button>
         </div>
 
         <!-- Right Side: View Mode Switcher and Quick SOS -->
@@ -141,6 +147,23 @@
                     </div>
                 </div>
 
+                <!-- Backup & restore of every on-device record -->
+                <div class="space-y-2">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Backup &amp; Restore</p>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-export-backup" type="button"
+                            class="flex-1 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-semibold px-2 py-1.5 hover:bg-gray-100 hover:text-gray-900 transition">
+                            Export Backup
+                        </button>
+                        <button id="btn-import-backup" type="button"
+                            class="flex-1 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-semibold px-2 py-1.5 hover:bg-gray-100 hover:text-gray-900 transition">
+                            Import Backup
+                        </button>
+                    </div>
+                    <input id="import-backup-file" type="file" accept="application/json,.json" class="hidden">
+                    <p id="backup-status" class="text-[10px] text-gray-500">All data stays on this device.</p>
+                </div>
+
                 <div class="text-xs text-gray-600">
                     <p class="font-bold">Home Ambient Stats</p>
                     <div class="mt-1 flex justify-between">
@@ -197,6 +220,18 @@
             
             <!-- Tab: Dashboard Overview -->
             <section id="panel-overview" class="tab-panel space-y-6">
+                <!-- Medication & routine reminders: overdue and due-soon tasks -->
+                <div id="overview-reminders-card" class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-gray-900 text-lg">Medication &amp; Routine Reminders</h3>
+                        <span id="overview-reminders-count" class="px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[10px] font-bold uppercase tracking-wider" data-i18n-managed="true">All clear</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Pending tasks that are overdue or due within the next hour</p>
+                    <div id="overview-reminders-list" class="space-y-2 mt-4">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                     <!-- Column 1: Fast Status & Action Card -->
                     <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">

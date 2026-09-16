@@ -1,5 +1,8 @@
 // basa - App Controller & State Manager
 
+// The ambient IoT telemetry can only ever be in one of these modes
+const IOT_MODES = ['normal', 'anomaly'];
+
 // Main State Object
 let state = {
     viewMode: 'child', // 'child' or 'parent'
@@ -27,7 +30,7 @@ let state = {
         startTime: null,
         timerInterval: null
     },
-    iotMode: 'normal', // 'normal' or 'anomaly'
+    iotMode: 'normal', // one of IOT_MODES
     wearables: null, // Google Fit / Garmin / Whoop connection + sync metadata
     navOpen: false,
     parentProfiles: [], // every parent being cared for
@@ -353,6 +356,16 @@ function init() {
     populateLanguageOptions();
     document.getElementById('language-select').addEventListener('change', e => setLanguage(e.target.value));
     document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
+
+    // Backup & restore controls
+    document.getElementById('btn-export-backup').addEventListener('click', exportBackup);
+    document.getElementById('btn-import-backup').addEventListener('click', () => {
+        document.getElementById('import-backup-file').click();
+    });
+    document.getElementById('import-backup-file').addEventListener('change', handleImportBackupChange);
+
+    // Overdue reminder badge jumps straight to the daily schedule
+    document.getElementById('reminder-alert-badge').addEventListener('click', () => switchTab('scheduler'));
     applyTheme(state.theme);
     setLanguage(state.language);
 
@@ -563,6 +576,8 @@ function setLanguage(code) {
 
     storageSetString('language', state.language);
     translateDocument();
+    // Reminder labels are generated at render time, so redraw them in the new language
+    if (typeof renderReminders === 'function') renderReminders();
 }
 
 // Replace every known English phrase with its translation (or restore English)
@@ -577,6 +592,10 @@ function translateDocument() {
     nodes.forEach(node => {
         const parent = node.parentNode;
         if (!parent || skipTags.indexOf(parent.nodeName) !== -1) return;
+        // Reminder labels are already rendered in the active language by
+        // renderReminders(), so skip them here to avoid the walker treating
+        // translated text as the untranslated English "source".
+        if (parent.closest && parent.closest('[data-i18n-managed]')) return;
 
         if (!translationSources.has(node)) {
             if (!node.nodeValue || !node.nodeValue.trim()) return;
@@ -1207,6 +1226,318 @@ function toggleRoutineComplete(id) {
 
     saveState();
     updateUI();
+}
+
+// --- Medication & routine reminders -------------------------------------
+// Pending routines are compared against the wall clock so carers immediately
+// see what has been missed and what is about to be due.
+
+const REMINDER_WINDOW_MINUTES = 60; // "due soon" look-ahead
+
+// Convert an "HH:MM" schedule entry into minutes past midnight (null if invalid)
+function parseRoutineTime(time) {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(String(time || '').trim());
+    if (!match) return null;
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    if (hours > 23 || minutes > 59) return null;
+    return (hours * 60) + minutes;
+}
+
+// Split the pending routines into overdue and due-soon buckets
+function getDueReminders(now) {
+    const reference = now instanceof Date ? now : new Date();
+    const nowMinutes = (reference.getHours() * 60) + reference.getMinutes();
+    const overdue = [];
+    const dueSoon = [];
+
+    state.routines.forEach(routine => {
+        if (routine.completed) return;
+        const scheduled = parseRoutineTime(routine.time);
+        if (scheduled === null) return;
+        const minutesAway = scheduled - nowMinutes;
+        const entry = Object.assign({}, routine, { minutesAway });
+        if (minutesAway < 0) {
+            overdue.push(entry);
+        } else if (minutesAway <= REMINDER_WINDOW_MINUTES) {
+            dueSoon.push(entry);
+        }
+    });
+
+    overdue.sort((a, b) => a.minutesAway - b.minutesAway);
+    dueSoon.sort((a, b) => a.minutesAway - b.minutesAway);
+    return { overdue, dueSoon };
+}
+
+// Human readable "40 min overdue" / "in 25 min" label
+// Look up a reminder-label phrase in the given dictionary, falling back to
+// the original English key when no translation exists (same convention as
+// the rest of the app's text-node translation walker).
+function translateReminderText(dict, key) {
+    return Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : key;
+}
+
+function formatReminderDelay(minutesAway, dict) {
+    const strings = dict || languageDictionary(state.language);
+    const tr = (key) => translateReminderText(strings, key);
+    const magnitude = Math.abs(minutesAway);
+    const hours = Math.floor(magnitude / 60);
+    const minutes = magnitude % 60;
+    const parts = [];
+    if (hours > 0) parts.push(`${hours} ${tr('hr')}`);
+    if (minutes > 0 || hours === 0) parts.push(`${minutes} ${tr('min')}`);
+    const span = parts.join(' ');
+    if (minutesAway < 0) return `${span} ${tr('overdue')}`;
+    if (minutesAway === 0) return tr('due now');
+    return tr('in %s').replace('%s', span);
+}
+
+// Render the overview reminders card plus the header counter badge
+function renderReminders(now) {
+    const list = document.getElementById('overview-reminders-list');
+    const counter = document.getElementById('overview-reminders-count');
+    const badge = document.getElementById('reminder-alert-badge');
+    const badgeText = document.getElementById('reminder-alert-text');
+    if (!list || !counter) return { overdue: [], dueSoon: [] };
+
+    const reminders = getDueReminders(now);
+    const items = reminders.overdue.concat(reminders.dueSoon);
+    const dict = languageDictionary(state.language);
+    const tr = (key) => translateReminderText(dict, key);
+
+    list.innerHTML = '';
+    if (items.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-gray-400 italic';
+        empty.textContent = tr('Nothing due right now. All scheduled tasks are on track.');
+        empty.dataset.i18nManaged = 'true';
+        list.appendChild(empty);
+        counter.dataset.i18nManaged = 'true';
+        counter.textContent = tr('All clear');
+        counter.className = "px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
+    } else {
+        items.forEach(item => {
+            const overdue = item.minutesAway < 0;
+            const row = document.createElement('div');
+            row.className = `flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2.5 rounded-lg border text-xs ${overdue ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`;
+
+            const info = document.createElement('div');
+            info.className = 'min-w-0';
+
+            const title = document.createElement('span');
+            title.className = `font-semibold ${overdue ? 'text-red-700' : 'text-amber-700'}`;
+            title.textContent = `${item.time} - ${item.name}`;
+            title.dataset.i18nManaged = 'true';
+
+            const delay = document.createElement('span');
+            delay.className = `block text-[10px] ${overdue ? 'text-red-600' : 'text-amber-600'}`;
+            delay.textContent = formatReminderDelay(item.minutesAway, dict);
+            delay.dataset.i18nManaged = 'true';
+
+            info.appendChild(title);
+            info.appendChild(delay);
+
+            const button = document.createElement('button');
+            button.className = 'self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition shrink-0';
+            button.textContent = tr('Mark Taken');
+            button.dataset.i18nManaged = 'true';
+            button.addEventListener('click', () => toggleRoutineComplete(item.id));
+
+            row.appendChild(info);
+            row.appendChild(button);
+            list.appendChild(row);
+        });
+        counter.textContent = `${reminders.overdue.length} ${tr('overdue')} / ${reminders.dueSoon.length} ${tr('due soon')}`;
+        counter.dataset.i18nManaged = 'true';
+        counter.className = reminders.overdue.length > 0
+            ? "px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[10px] font-bold uppercase tracking-wider"
+            : "px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
+    }
+
+    if (badge && badgeText) {
+        badgeText.dataset.i18nManaged = 'true';
+        if (reminders.overdue.length > 0) {
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+            badgeText.textContent = `${reminders.overdue.length} ${tr('overdue')}`;
+        } else {
+            badge.classList.add('hidden');
+            badge.classList.remove('flex');
+            badgeText.textContent = `0 ${tr('overdue')}`;
+        }
+    }
+
+    return reminders;
+}
+
+// --- Backup & restore ---------------------------------------------------
+// Every record lives on the device only, so an explicit export / import keeps
+// families in control of their own data when changing phone or browser.
+
+const BACKUP_VERSION = 1;
+
+// Serialise the whole dashboard into a plain, portable object
+function buildBackup() {
+    return {
+        app: 'basa',
+        version: BACKUP_VERSION,
+        exportedAt: new Date().toISOString(),
+        data: {
+            routines: state.routines,
+            vitals: state.vitals,
+            careEvents: state.careEvents,
+            careNotes: state.careNotes,
+            vaultDocs: state.vaultDocs,
+            geofence: state.geofence,
+            emergencyLog: state.emergencyLog,
+            emergency: state.emergency,
+            wearables: state.wearables,
+            parentProfiles: state.parentProfiles,
+            childProfiles: state.childProfiles,
+            activeParentIndex: state.activeParentIndex,
+            activeChildIndex: state.activeChildIndex,
+            language: state.language,
+            theme: state.theme,
+            viewMode: state.viewMode,
+            isEmergency: state.isEmergency,
+            iotMode: state.iotMode
+        }
+    };
+}
+
+function setBackupStatus(message, tone) {
+    const el = document.getElementById('backup-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `text-[10px] ${tone === 'error' ? 'text-red-600' : (tone === 'success' ? 'text-green-600' : 'text-gray-500')}`;
+}
+
+// Download the backup as a timestamped JSON file
+function exportBackup() {
+    const payload = JSON.stringify(buildBackup(), null, 2);
+    const stamp = new Date().toISOString().split('T')[0];
+    const filename = `basa-backup-${stamp}.json`;
+
+    try {
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (URL.revokeObjectURL) URL.revokeObjectURL(url);
+        setBackupStatus(`Backup saved as ${filename}`, 'success');
+    } catch (err) {
+        setBackupStatus('Could not export the backup on this browser.', 'error');
+        return null;
+    }
+
+    return filename;
+}
+
+// Replace the in-memory state with a previously exported backup
+function applyBackup(backup) {
+    if (!backup || typeof backup !== 'object' || backup.app !== 'basa'
+        || !backup.data || typeof backup.data !== 'object' || !Number.isInteger(backup.version)) {
+        setBackupStatus('That file is not a valid basa backup.', 'error');
+        return false;
+    }
+    if (backup.version > BACKUP_VERSION) {
+        setBackupStatus('This backup was created by a newer version of basa. Update the app to import it.', 'error');
+        return false;
+    }
+
+    const data = backup.data;
+    const list = (value, fallback) => (Array.isArray(value) ? value : fallback);
+
+    state.routines = list(data.routines, state.routines);
+    state.vitals = list(data.vitals, state.vitals);
+    state.careEvents = list(data.careEvents, state.careEvents);
+    state.careNotes = list(data.careNotes, state.careNotes);
+    state.vaultDocs = list(data.vaultDocs, state.vaultDocs);
+    state.emergencyLog = list(data.emergencyLog, state.emergencyLog);
+    if (data.geofence && typeof data.geofence === 'object') {
+        state.geofence = Object.assign({}, state.geofence, data.geofence, {
+            logs: list(data.geofence.logs, state.geofence.logs)
+        });
+    }
+    if (data.emergency && typeof data.emergency === 'object') {
+        state.emergency = Object.assign({}, state.emergency, data.emergency);
+    }
+    if (data.wearables && typeof data.wearables === 'object') {
+        const defaults = emptyWearables();
+        const storedProviders = data.wearables.providers || {};
+        Object.keys(defaults.providers).forEach(id => {
+            defaults.providers[id] = Object.assign({}, defaults.providers[id], storedProviders[id]);
+        });
+        defaults.lastSync = data.wearables.lastSync || null;
+        state.wearables = defaults;
+    }
+    state.parentProfiles = list(data.parentProfiles, state.parentProfiles).map(normalizeParentProfile);
+    state.childProfiles = list(data.childProfiles, state.childProfiles).map(normalizeChildProfile);
+    state.activeParentIndex = clampProfileIndex(
+        data.activeParentIndex !== undefined ? data.activeParentIndex : state.activeParentIndex,
+        state.parentProfiles
+    );
+    state.activeChildIndex = clampProfileIndex(
+        data.activeChildIndex !== undefined ? data.activeChildIndex : state.activeChildIndex,
+        state.childProfiles
+    );
+    syncActiveProfiles();
+    state.isEmergency = typeof data.isEmergency === 'boolean' ? data.isEmergency : state.isEmergency;
+    state.iotMode = IOT_MODES.includes(data.iotMode) ? data.iotMode : state.iotMode;
+
+    saveState();
+
+    // Refresh every dependent view with the restored records
+    if (data.theme) applyTheme(data.theme);
+    if (data.viewMode) setViewMode(data.viewMode);
+    const slider = document.getElementById('geofence-radius-slider');
+    if (slider) {
+        slider.value = state.geofence.radius;
+        document.getElementById('geofence-radius-val').textContent = `${state.geofence.radius} meters`;
+    }
+    checkGeofenceStatus(false);
+    renderSetupForms();
+    renderEmergencyNumbers();
+    if (data.language) setLanguage(data.language);
+    updateUI();
+
+    setBackupStatus('Backup restored onto this device.', 'success');
+    return true;
+}
+
+// Read a user-picked backup file and restore it
+function importBackupFile(file) {
+    if (!file) return Promise.resolve(false);
+
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                resolve(applyBackup(JSON.parse(String(reader.result))));
+            } catch (err) {
+                setBackupStatus('That file is not a valid basa backup.', 'error');
+                resolve(false);
+            }
+        };
+        reader.onerror = () => {
+            setBackupStatus('The backup file could not be read.', 'error');
+            resolve(false);
+        };
+        reader.readAsText(file);
+    });
+}
+
+function handleImportBackupChange(e) {
+    const input = e && e.target ? e.target : null;
+    const file = input && input.files ? input.files[0] : null;
+    return importBackupFile(file).then(result => {
+        if (input) input.value = '';
+        return result;
+    });
 }
 
 // Handle Add Vitals entries
@@ -2494,6 +2825,9 @@ function updateUI() {
     // Wearable connection rows + manual sync status
     renderWearables();
 
+    // Overdue / due-soon medication reminders
+    renderReminders();
+
     // Re-translate freshly rendered content when a non-English language is active
     if (state.language !== DEFAULT_LANGUAGE) translateDocument();
 }
@@ -2516,6 +2850,14 @@ if (typeof window !== 'undefined') {
     window.toggleWearableConnection = toggleWearableConnection;
     window.syncWearables = syncWearables;
     window.renderWearables = renderWearables;
+    window.getDueReminders = getDueReminders;
+    window.renderReminders = renderReminders;
+    window.formatReminderDelay = formatReminderDelay;
+    window.parseRoutineTime = parseRoutineTime;
+    window.buildBackup = buildBackup;
+    window.exportBackup = exportBackup;
+    window.applyBackup = applyBackup;
+    window.importBackupFile = importBackupFile;
     window.WEARABLE_PROVIDERS = WEARABLE_PROVIDERS;
     window.renderVitalsChart = renderVitalsChart;
     window.setIoTMode = setIoTMode;

@@ -1221,6 +1221,214 @@ describe('Basa Dashboard Unit Tests', () => {
     expect(document.getElementById('wearable-status-whoop').textContent).toContain('never');
   });
 
+  // --- Medication & routine reminders -----------------------------------
+
+  test('reminders split pending routines into overdue and due-soon buckets', () => {
+    window.localStorage.setItem('basa_routines', JSON.stringify([
+      { id: 1, name: 'Morning pill', time: '08:00', category: 'medication', dosage: '5mg', completed: false, completedTime: null },
+      { id: 2, name: 'Stretching', time: '10:30', category: 'therapy', dosage: '15 mins', completed: false, completedTime: null },
+      { id: 3, name: 'Evening walk', time: '18:00', category: 'routine', dosage: 'Garden', completed: false, completedTime: null },
+      { id: 4, name: 'Already done', time: '07:00', category: 'medication', dosage: '1 tab', completed: true, completedTime: '07:05' },
+      { id: 5, name: 'Broken time', time: 'later', category: 'routine', dosage: '', completed: false, completedTime: null }
+    ]));
+    require('../../app.js');
+
+    const reminders = window.getDueReminders(new Date(2026, 8, 16, 10, 0, 0));
+    expect(reminders.overdue.map(r => r.id)).toEqual([1]);
+    expect(reminders.dueSoon.map(r => r.id)).toEqual([2]);
+    expect(reminders.overdue[0].minutesAway).toBe(-120);
+    expect(reminders.dueSoon[0].minutesAway).toBe(30);
+  });
+
+  test('invalid routine times are ignored by the reminder parser', () => {
+    require('../../app.js');
+
+    expect(window.parseRoutineTime('08:15')).toBe(495);
+    expect(window.parseRoutineTime('25:00')).toBeNull();
+    expect(window.parseRoutineTime('08:75')).toBeNull();
+    expect(window.parseRoutineTime('')).toBeNull();
+    expect(window.parseRoutineTime(undefined)).toBeNull();
+  });
+
+  test('reminder delay labels read naturally', () => {
+    require('../../app.js');
+
+    expect(window.formatReminderDelay(0)).toBe('due now');
+    expect(window.formatReminderDelay(30)).toBe('in 30 min');
+    expect(window.formatReminderDelay(-90)).toBe('1 hr 30 min overdue');
+    expect(window.formatReminderDelay(60)).toBe('in 1 hr');
+  });
+
+  test('overdue reminders render a card row and the header badge', () => {
+    window.localStorage.setItem('basa_routines', JSON.stringify([
+      { id: 1, name: 'Morning pill', time: '08:00', category: 'medication', dosage: '5mg', completed: false, completedTime: null }
+    ]));
+    require('../../app.js');
+
+    window.renderReminders(new Date(2026, 8, 16, 9, 0, 0));
+
+    const badge = document.getElementById('reminder-alert-badge');
+    expect(document.getElementById('overview-reminders-list').textContent).toContain('Morning pill');
+    expect(document.getElementById('overview-reminders-count').textContent).toContain('1 overdue');
+    expect(badge.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('reminder-alert-text').textContent).toBe('1 overdue');
+
+    // Clicking the badge jumps to the scheduler tab
+    badge.click();
+    expect(window.state.activeTab).toBe('scheduler');
+  });
+
+  test('no pending reminders shows the all-clear state', () => {
+    window.localStorage.setItem('basa_routines', JSON.stringify([
+      { id: 1, name: 'Morning pill', time: '08:00', category: 'medication', dosage: '5mg', completed: true, completedTime: '08:05' }
+    ]));
+    require('../../app.js');
+
+    window.renderReminders(new Date(2026, 8, 16, 9, 0, 0));
+
+    expect(document.getElementById('overview-reminders-list').textContent).toContain('Nothing due right now');
+    expect(document.getElementById('overview-reminders-count').textContent).toBe('All clear');
+    expect(document.getElementById('reminder-alert-badge').classList.contains('hidden')).toBe(true);
+  });
+
+  // --- Backup & restore --------------------------------------------------
+
+  test('export backup downloads a timestamped JSON file', () => {
+    require('../../app.js');
+
+    const createObjectURL = jest.fn().mockReturnValue('blob:basa');
+    const revokeObjectURL = jest.fn();
+    window.URL.createObjectURL = createObjectURL;
+    window.URL.revokeObjectURL = revokeObjectURL;
+    const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    const filename = window.exportBackup();
+
+    expect(filename).toMatch(/^basa-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(createObjectURL).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:basa');
+    expect(clickSpy).toHaveBeenCalled();
+    expect(document.getElementById('backup-status').textContent).toContain('Backup saved');
+
+    const backup = window.buildBackup();
+    expect(backup.app).toBe('basa');
+    expect(backup.data.routines.length).toBe(3);
+    expect(backup.data.vitals.length).toBeGreaterThan(0);
+
+    clickSpy.mockRestore();
+  });
+
+  test('export backup reports a failure instead of throwing', () => {
+    require('../../app.js');
+
+    window.URL.createObjectURL = jest.fn(() => { throw new Error('unsupported'); });
+
+    expect(window.exportBackup()).toBeNull();
+    expect(document.getElementById('backup-status').textContent).toContain('Could not export');
+  });
+
+  test('applying a backup restores every collection and preference', () => {
+    require('../../app.js');
+
+    const restored = window.applyBackup({
+      app: 'basa',
+      version: 1,
+      data: {
+        routines: [{ id: 9, name: 'Restored pill', time: '09:00', category: 'medication', dosage: '2mg', completed: false, completedTime: null }],
+        vitals: [{ date: '2026-09-01', systolic: 118, diastolic: 76, pulse: 68, glucose: 90, temp: 36.4 }],
+        careEvents: [],
+        careNotes: [],
+        vaultDocs: [{ id: 3, title: 'Restored report', category: 'Lab Report', size: '1 MB', date: '2026-09-01' }],
+        geofence: { radius: 250, parentX: 210, parentY: 160, logs: [] },
+        emergencyLog: [],
+        parentProfiles: [{ name: 'Restored Parent' }],
+        childProfiles: [{ name: 'Restored Child' }],
+        activeParentIndex: 0,
+        activeChildIndex: 0,
+        wearables: { providers: { whoop: { connected: true } }, lastSync: null },
+        theme: 'dark',
+        viewMode: 'parent',
+        language: 'en'
+      }
+    });
+
+    expect(restored).toBe(true);
+    expect(window.state.routines[0].name).toBe('Restored pill');
+    expect(window.state.vaultDocs[0].title).toBe('Restored report');
+    expect(window.state.geofence.radius).toBe(250);
+    expect(window.state.parentProfile.name).toBe('Restored Parent');
+    expect(window.state.childProfile.name).toBe('Restored Child');
+    expect(window.state.wearables.providers.whoop.connected).toBe(true);
+    expect(window.state.theme).toBe('dark');
+    expect(window.state.viewMode).toBe('parent');
+    expect(JSON.parse(window.localStorage.getItem('basa_routines'))[0].name).toBe('Restored pill');
+    expect(document.getElementById('backup-status').textContent).toContain('restored');
+  });
+
+  test('invalid backups are rejected without touching the state', () => {
+    require('../../app.js');
+
+    const before = window.state.routines.length;
+    expect(window.applyBackup(null)).toBe(false);
+    expect(window.applyBackup({ app: 'basa' })).toBe(false);
+    expect(window.state.routines.length).toBe(before);
+    expect(document.getElementById('backup-status').textContent).toContain('not a valid basa backup');
+  });
+
+  test('importing a backup file parses and restores it', async () => {
+    require('../../app.js');
+
+    const payload = JSON.stringify({
+      app: 'basa',
+      version: 1,
+      data: { routines: [{ id: 42, name: 'Imported task', time: '11:00', category: 'routine', dosage: '', completed: false, completedTime: null }] }
+    });
+
+    const file = new File([payload], 'basa-backup.json', { type: 'application/json' });
+    await expect(window.importBackupFile(file)).resolves.toBe(true);
+    expect(window.state.routines[0].name).toBe('Imported task');
+
+    // A malformed file is reported and leaves the data untouched
+    const broken = new File(['{not json'], 'broken.json', { type: 'application/json' });
+    await expect(window.importBackupFile(broken)).resolves.toBe(false);
+    expect(window.state.routines[0].name).toBe('Imported task');
+    expect(document.getElementById('backup-status').textContent).toContain('not a valid basa backup');
+
+    // Nothing selected is a no-op
+    await expect(window.importBackupFile(null)).resolves.toBe(false);
+  });
+
+  test('the import button opens the hidden file picker', () => {
+    require('../../app.js');
+
+    const input = document.getElementById('import-backup-file');
+    const clickSpy = jest.spyOn(input, 'click').mockImplementation(() => {});
+    document.getElementById('btn-import-backup').click();
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  test('choosing a file in the picker restores the backup and clears the input', async () => {
+    require('../../app.js');
+
+    const payload = JSON.stringify({
+      app: 'basa',
+      version: 1,
+      data: { routines: [{ id: 7, name: 'Picked task', time: '12:00', category: 'routine', dosage: '', completed: false, completedTime: null }] }
+    });
+
+    const input = document.getElementById('import-backup-file');
+    input.files = [new File([payload], 'basa-backup.json', { type: 'application/json' })];
+    input.dispatchEvent(new Event('change'));
+
+    // The FileReader resolves asynchronously, so wait for the restore to land
+    for (let i = 0; i < 50 && window.state.routines[0].name !== 'Picked task'; i++) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    expect(window.state.routines[0].name).toBe('Picked task');
+    expect(input.value).toBe('');
+  });
+
   test('corrupted stored values fall back to the seed data', () => {
     window.localStorage.setItem('basa_routines', '{not json');
     require('../../app.js');
