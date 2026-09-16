@@ -1,5 +1,8 @@
 // basa - App Controller & State Manager
 
+// The ambient IoT telemetry can only ever be in one of these modes
+const IOT_MODES = ['normal', 'anomaly'];
+
 // Main State Object
 let state = {
     viewMode: 'child', // 'child' or 'parent'
@@ -27,7 +30,7 @@ let state = {
         startTime: null,
         timerInterval: null
     },
-    iotMode: 'normal', // 'normal' or 'anomaly'
+    iotMode: 'normal', // one of IOT_MODES
     wearables: null, // Google Fit / Garmin / Whoop connection + sync metadata
     navOpen: false,
     parentProfiles: [], // every parent being cared for
@@ -1263,6 +1266,9 @@ function getDueReminders(now) {
 }
 
 // Human readable "40 min overdue" / "in 25 min" label
+// Look up a reminder-label phrase in the given dictionary, falling back to
+// the original English key when no translation exists (same convention as
+// the rest of the app's text-node translation walker).
 function translateReminderText(dict, key) {
     return dict[key] || key;
 }
@@ -1467,7 +1473,7 @@ function applyBackup(backup) {
     );
     syncActiveProfiles();
     state.isEmergency = typeof data.isEmergency === 'boolean' ? data.isEmergency : state.isEmergency;
-    state.iotMode = ['normal', 'anomaly'].includes(data.iotMode) ? data.iotMode : state.iotMode;
+    state.iotMode = IOT_MODES.includes(data.iotMode) ? data.iotMode : state.iotMode;
 
     saveState();
 

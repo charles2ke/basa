@@ -493,11 +493,15 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
 
   test("Overdue medication reminders appear on the overview and header", async ({ page }) => {
     // Add a routine scheduled a minute in the past (relative to the browser
-    // clock) so it is always overdue regardless of when the test runs
+    // clock) so it is always overdue regardless of when the test runs. The
+    // app compares HH:MM schedules as minutes-of-day only (no date), so the
+    // minute is wrapped within a 24h cycle rather than rolled back a real day
+    // when the clock is near midnight.
     const overdueTime = await page.evaluate(() => {
-      const past = new Date(Date.now() - 60 * 1000);
+      const now = new Date();
+      const totalMinutes = ((now.getHours() * 60 + now.getMinutes()) - 1 + 1440) % 1440;
       const pad = (n) => String(n).padStart(2, "0");
-      return `${pad(past.getHours())}:${pad(past.getMinutes())}`;
+      return `${pad(Math.floor(totalMinutes / 60))}:${pad(totalMinutes % 60)}`;
     });
     await openTab(page, "scheduler");
     await page.fill("#routine-name", "Overdue E2E Pill");
