@@ -81,8 +81,8 @@ var addSorting = (function() {
             cols.push(col);
             if (col.sortable) {
                 col.defaultDescSort = col.type === 'number';
-                colNode.appendChild(document.createElement('span')).className =
-                    'sorter';
+                colNode.innerHTML =
+                    colNode.innerHTML + '<span class="sorter"></span>';
             }
         }
         return cols;

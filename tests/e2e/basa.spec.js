@@ -491,4 +491,57 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
     await expect(page.locator("#wearable-status-garmin")).toContainText("Not connected");
   });
 
+  test("Overdue medication reminders appear on the overview and header", async ({ page }) => {
+    // Add a routine scheduled at midnight so it is always overdue
+    await openTab(page, "scheduler");
+    await page.fill("#routine-name", "Overdue E2E Pill");
+    await page.fill("#routine-time", "00:01");
+    await page.fill("#routine-dosage", "1 tablet");
+    await page.click("#routine-form button[type='submit']");
+
+    await openTab(page, "overview");
+    await expect(page.locator("#overview-reminders-list")).toContainText("Overdue E2E Pill");
+    await expect(page.locator("#overview-reminders-count")).toContainText("overdue");
+
+    const badge = page.locator("#reminder-alert-badge");
+    await expect(badge).toBeVisible();
+
+    // The badge is a shortcut to the daily schedule
+    await badge.click();
+    await expect(page.locator("#panel-scheduler")).toBeVisible();
+
+    // Marking it taken clears the reminder
+    await openTab(page, "overview");
+    await page.locator("#overview-reminders-list button", { hasText: "Mark Taken" }).first().click();
+    await expect(page.locator("#overview-reminders-list")).not.toContainText("Overdue E2E Pill");
+  });
+
+  test("Backup can be exported and imported again", async ({ page }) => {
+    // Create a recognisable record, then export a backup
+    await openTab(page, "careteam");
+    await page.fill("#note-text", "Backup roundtrip note");
+    await page.click("#careteam-note-form button[type='submit']");
+    await expect(page.locator("#careteam-notes-list")).toContainText("Backup roundtrip note");
+
+    await page.click("#btn-hamburger");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.click("#btn-export-backup"),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^basa-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    const backupPath = await download.path();
+    await expect(page.locator("#backup-status")).toContainText("Backup saved");
+
+    // Wipe the device data, then restore from the downloaded file
+    await page.evaluate(() => window.localStorage.clear());
+    await page.evaluate(() => (window.indexedDB.deleteDatabase ? window.indexedDB.deleteDatabase("basa") : null));
+    await page.reload();
+    await expect(page.locator("#careteam-notes-list")).not.toContainText("Backup roundtrip note");
+
+    await page.click("#btn-hamburger");
+    await page.setInputFiles("#import-backup-file", backupPath);
+    await expect(page.locator("#backup-status")).toContainText("restored");
+    await expect(page.locator("#careteam-notes-list")).toContainText("Backup roundtrip note");
+  });
+
 });

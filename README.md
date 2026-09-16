@@ -32,6 +32,8 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 - **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
 - **Elder Care Circle**: Collaborative platform for scheduling appointments, routines tracking, and caregiver logs sharing.
 - **Wearable Sync**: Connect Google Fit, Garmin or Whoop from the Vitals tab and pull the latest readings on demand with the manual **Sync Now** button.
+- **Medication Reminders**: The dashboard overview lists every pending routine that is overdue or due within the next hour, and an amber counter in the header links straight to the daily schedule.
+- **Backup & Restore**: Export every on-device record to a timestamped JSON file from the hamburger menu, and import it again on another browser or device.
 - **Medical Vault**: Securely encrypted health report logs and prescription storage.
 - **Wellness Games**: Brain-training matching games for cognitive engagement.
 - **Hamburger Navigation**: The main navigation lives in an off-canvas drawer opened from the header hamburger button on every screen size.
@@ -67,6 +69,12 @@ Blood pressure, pulse, glucose, and temperature logging with SVG trend charts an
 Shared caregiver workspace for coordinating appointments, shift notes, and live caregiver updates.
 
 ![Care team workspace](docs/screenshots/careteam.png)
+
+### Medication & Routine Reminders
+Pending routines that are overdue or due within the next hour are surfaced at the top of the overview, each with a one-tap **Mark Taken** button. When something is overdue an amber **Reminders** badge appears in the header and jumps to the daily schedule.
+
+### Backup & Restore
+**Export Backup** in the hamburger drawer downloads every routine, vital, care note, vault record, profile and preference as a single JSON file; **Import Backup** restores that file onto any device. Nothing is uploaded anywhere - the data never leaves the browser.
 
 ### Medical Vault
 Categorized, searchable archive of health reports, prescriptions, and insurance documents.
