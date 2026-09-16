@@ -159,6 +159,18 @@
         },
 
         /**
+         * Close the underlying PouchDB connection so IndexedDB deletion
+         * requests (e.g. from tests wiping the database) are not blocked by
+         * an open handle. Safe to call even when PouchDB was never opened.
+         */
+        close() {
+            if (!pouch) return Promise.resolve();
+            const db = pouch;
+            pouch = null;
+            return db.close().catch(() => {});
+        },
+
+        /**
          * Read every basa document out of PouchDB.
          * Resolves with a plain `{ key: value }` object (empty when PouchDB
          * is unavailable or the database has not been populated yet).

@@ -573,6 +573,8 @@ function setLanguage(code) {
 
     storageSetString('language', state.language);
     translateDocument();
+    // Reminder labels are generated at render time, so redraw them in the new language
+    if (typeof renderReminders === 'function') renderReminders();
 }
 
 // Replace every known English phrase with its translation (or restore English)
@@ -1261,15 +1263,21 @@ function getDueReminders(now) {
 }
 
 // Human readable "40 min overdue" / "in 25 min" label
+function translateReminderText(key) {
+    return languageDictionary(state.language)[key] || key;
+}
+
 function formatReminderDelay(minutesAway) {
     const magnitude = Math.abs(minutesAway);
     const hours = Math.floor(magnitude / 60);
     const minutes = magnitude % 60;
     const parts = [];
-    if (hours > 0) parts.push(`${hours} hr`);
-    if (minutes > 0 || hours === 0) parts.push(`${minutes} min`);
+    if (hours > 0) parts.push(`${hours} ${translateReminderText('hr')}`);
+    if (minutes > 0 || hours === 0) parts.push(`${minutes} ${translateReminderText('min')}`);
     const span = parts.join(' ');
-    return minutesAway < 0 ? `${span} overdue` : (minutesAway === 0 ? 'due now' : `in ${span}`);
+    if (minutesAway < 0) return `${span} ${translateReminderText('overdue')}`;
+    if (minutesAway === 0) return translateReminderText('due now');
+    return `${translateReminderText('in')} ${span}`;
 }
 
 // Render the overview reminders card plus the header counter badge
@@ -1310,14 +1318,14 @@ function renderReminders(now) {
 
             const button = document.createElement('button');
             button.className = 'self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition shrink-0';
-            button.textContent = 'Mark Taken';
+            button.textContent = translateReminderText('Mark Taken');
             button.addEventListener('click', () => toggleRoutineComplete(item.id));
 
             row.appendChild(info);
             row.appendChild(button);
             list.appendChild(row);
         });
-        counter.textContent = `${reminders.overdue.length} overdue / ${reminders.dueSoon.length} due soon`;
+        counter.textContent = `${reminders.overdue.length} ${translateReminderText('overdue')} / ${reminders.dueSoon.length} ${translateReminderText('due soon')}`;
         counter.className = reminders.overdue.length > 0
             ? "px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[10px] font-bold uppercase tracking-wider"
             : "px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
@@ -1327,11 +1335,11 @@ function renderReminders(now) {
         if (reminders.overdue.length > 0) {
             badge.classList.remove('hidden');
             badge.classList.add('flex');
-            badgeText.textContent = `${reminders.overdue.length} overdue`;
+            badgeText.textContent = `${reminders.overdue.length} ${translateReminderText('overdue')}`;
         } else {
             badge.classList.add('hidden');
             badge.classList.remove('flex');
-            badgeText.textContent = '0 overdue';
+            badgeText.textContent = `0 ${translateReminderText('overdue')}`;
         }
     }
 
@@ -1366,7 +1374,9 @@ function buildBackup() {
             activeChildIndex: state.activeChildIndex,
             language: state.language,
             theme: state.theme,
-            viewMode: state.viewMode
+            viewMode: state.viewMode,
+            isEmergency: state.isEmergency,
+            iotMode: state.iotMode
         }
     };
 }
@@ -1405,7 +1415,8 @@ function exportBackup() {
 
 // Replace the in-memory state with a previously exported backup
 function applyBackup(backup) {
-    if (!backup || typeof backup !== 'object' || !backup.data || typeof backup.data !== 'object') {
+    if (!backup || typeof backup !== 'object' || backup.app !== 'basa' || backup.version !== BACKUP_VERSION
+        || !backup.data || typeof backup.data !== 'object') {
         setBackupStatus('That file is not a valid basa backup.', 'error');
         return false;
     }
@@ -1438,9 +1449,17 @@ function applyBackup(backup) {
     }
     state.parentProfiles = list(data.parentProfiles, state.parentProfiles).map(normalizeParentProfile);
     state.childProfiles = list(data.childProfiles, state.childProfiles).map(normalizeChildProfile);
-    state.activeParentIndex = clampProfileIndex(data.activeParentIndex, state.parentProfiles);
-    state.activeChildIndex = clampProfileIndex(data.activeChildIndex, state.childProfiles);
+    state.activeParentIndex = clampProfileIndex(
+        data.activeParentIndex !== undefined ? data.activeParentIndex : state.activeParentIndex,
+        state.parentProfiles
+    );
+    state.activeChildIndex = clampProfileIndex(
+        data.activeChildIndex !== undefined ? data.activeChildIndex : state.activeChildIndex,
+        state.childProfiles
+    );
     syncActiveProfiles();
+    state.isEmergency = typeof data.isEmergency === 'boolean' ? data.isEmergency : state.isEmergency;
+    state.iotMode = typeof data.iotMode === 'string' ? data.iotMode : state.iotMode;
 
     saveState();
 

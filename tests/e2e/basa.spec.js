@@ -492,10 +492,16 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
   });
 
   test("Overdue medication reminders appear on the overview and header", async ({ page }) => {
-    // Add a routine scheduled at midnight so it is always overdue
+    // Add a routine scheduled a minute in the past (relative to the browser
+    // clock) so it is always overdue regardless of when the test runs
+    const overdueTime = await page.evaluate(() => {
+      const past = new Date(Date.now() - 60 * 1000);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(past.getHours())}:${pad(past.getMinutes())}`;
+    });
     await openTab(page, "scheduler");
     await page.fill("#routine-name", "Overdue E2E Pill");
-    await page.fill("#routine-time", "00:01");
+    await page.fill("#routine-time", overdueTime);
     await page.fill("#routine-dosage", "1 tablet");
     await page.click("#routine-form button[type='submit']");
 
@@ -534,7 +540,16 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
 
     // Wipe the device data, then restore from the downloaded file
     await page.evaluate(() => window.localStorage.clear());
-    await page.evaluate(() => (window.indexedDB.deleteDatabase ? window.indexedDB.deleteDatabase("basa") : null));
+    await page.evaluate(() =>
+      window.BasaDB && window.BasaDB.close ? window.BasaDB.close() : null
+    );
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      if (!window.indexedDB.deleteDatabase) { resolve(); return; }
+      const request = window.indexedDB.deleteDatabase("basa");
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => resolve();
+    }));
     await page.reload();
     await expect(page.locator("#careteam-notes-list")).not.toContainText("Backup roundtrip note");
 
