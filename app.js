@@ -1263,21 +1263,23 @@ function getDueReminders(now) {
 }
 
 // Human readable "40 min overdue" / "in 25 min" label
-function translateReminderText(key) {
-    return languageDictionary(state.language)[key] || key;
+function translateReminderText(dict, key) {
+    return dict[key] || key;
 }
 
-function formatReminderDelay(minutesAway) {
+function formatReminderDelay(minutesAway, dict) {
+    const strings = dict || languageDictionary(state.language);
+    const tr = (key) => translateReminderText(strings, key);
     const magnitude = Math.abs(minutesAway);
     const hours = Math.floor(magnitude / 60);
     const minutes = magnitude % 60;
     const parts = [];
-    if (hours > 0) parts.push(`${hours} ${translateReminderText('hr')}`);
-    if (minutes > 0 || hours === 0) parts.push(`${minutes} ${translateReminderText('min')}`);
+    if (hours > 0) parts.push(`${hours} ${tr('hr')}`);
+    if (minutes > 0 || hours === 0) parts.push(`${minutes} ${tr('min')}`);
     const span = parts.join(' ');
-    if (minutesAway < 0) return `${span} ${translateReminderText('overdue')}`;
-    if (minutesAway === 0) return translateReminderText('due now');
-    return `${translateReminderText('in')} ${span}`;
+    if (minutesAway < 0) return `${span} ${tr('overdue')}`;
+    if (minutesAway === 0) return tr('due now');
+    return tr('in %s').replace('%s', span);
 }
 
 // Render the overview reminders card plus the header counter badge
@@ -1290,6 +1292,8 @@ function renderReminders(now) {
 
     const reminders = getDueReminders(now);
     const items = reminders.overdue.concat(reminders.dueSoon);
+    const dict = languageDictionary(state.language);
+    const tr = (key) => translateReminderText(dict, key);
 
     list.innerHTML = '';
     if (items.length === 0) {
@@ -1311,21 +1315,21 @@ function renderReminders(now) {
 
             const delay = document.createElement('span');
             delay.className = `block text-[10px] ${overdue ? 'text-red-600' : 'text-amber-600'}`;
-            delay.textContent = formatReminderDelay(item.minutesAway);
+            delay.textContent = formatReminderDelay(item.minutesAway, dict);
 
             info.appendChild(title);
             info.appendChild(delay);
 
             const button = document.createElement('button');
             button.className = 'self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition shrink-0';
-            button.textContent = translateReminderText('Mark Taken');
+            button.textContent = tr('Mark Taken');
             button.addEventListener('click', () => toggleRoutineComplete(item.id));
 
             row.appendChild(info);
             row.appendChild(button);
             list.appendChild(row);
         });
-        counter.textContent = `${reminders.overdue.length} ${translateReminderText('overdue')} / ${reminders.dueSoon.length} ${translateReminderText('due soon')}`;
+        counter.textContent = `${reminders.overdue.length} ${tr('overdue')} / ${reminders.dueSoon.length} ${tr('due soon')}`;
         counter.className = reminders.overdue.length > 0
             ? "px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[10px] font-bold uppercase tracking-wider"
             : "px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
@@ -1335,11 +1339,11 @@ function renderReminders(now) {
         if (reminders.overdue.length > 0) {
             badge.classList.remove('hidden');
             badge.classList.add('flex');
-            badgeText.textContent = `${reminders.overdue.length} ${translateReminderText('overdue')}`;
+            badgeText.textContent = `${reminders.overdue.length} ${tr('overdue')}`;
         } else {
             badge.classList.add('hidden');
             badge.classList.remove('flex');
-            badgeText.textContent = `0 ${translateReminderText('overdue')}`;
+            badgeText.textContent = `0 ${tr('overdue')}`;
         }
     }
 
@@ -1415,9 +1419,13 @@ function exportBackup() {
 
 // Replace the in-memory state with a previously exported backup
 function applyBackup(backup) {
-    if (!backup || typeof backup !== 'object' || backup.app !== 'basa' || backup.version !== BACKUP_VERSION
+    if (!backup || typeof backup !== 'object' || backup.app !== 'basa'
         || !backup.data || typeof backup.data !== 'object') {
         setBackupStatus('That file is not a valid basa backup.', 'error');
+        return false;
+    }
+    if (!Number.isInteger(backup.version) || backup.version > BACKUP_VERSION) {
+        setBackupStatus('This backup was created by a newer version of basa. Update the app to import it.', 'error');
         return false;
     }
 
@@ -1459,7 +1467,7 @@ function applyBackup(backup) {
     );
     syncActiveProfiles();
     state.isEmergency = typeof data.isEmergency === 'boolean' ? data.isEmergency : state.isEmergency;
-    state.iotMode = typeof data.iotMode === 'string' ? data.iotMode : state.iotMode;
+    state.iotMode = ['normal', 'anomaly'].includes(data.iotMode) ? data.iotMode : state.iotMode;
 
     saveState();
 

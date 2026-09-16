@@ -548,7 +548,7 @@ test.describe("basa - Parent Care & Safety Hub E2E Tests", () => {
       const request = window.indexedDB.deleteDatabase("basa");
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
-      request.onblocked = () => resolve();
+      request.onblocked = () => reject(new Error("indexedDB.deleteDatabase(\"basa\") was blocked by an open connection"));
     }));
     await page.reload();
     await expect(page.locator("#careteam-notes-list")).not.toContainText("Backup roundtrip note");
