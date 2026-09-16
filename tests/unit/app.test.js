@@ -1421,7 +1421,10 @@ describe('Basa Dashboard Unit Tests', () => {
     input.files = [new File([payload], 'basa-backup.json', { type: 'application/json' })];
     input.dispatchEvent(new Event('change'));
 
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // The FileReader resolves asynchronously, so wait for the restore to land
+    for (let i = 0; i < 50 && window.state.routines[0].name !== 'Picked task'; i++) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
     expect(window.state.routines[0].name).toBe('Picked task');
     expect(input.value).toBe('');
   });

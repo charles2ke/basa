@@ -73,8 +73,12 @@ Shared caregiver workspace for coordinating appointments, shift notes, and live 
 ### Medication & Routine Reminders
 Pending routines that are overdue or due within the next hour are surfaced at the top of the overview, each with a one-tap **Mark Taken** button. When something is overdue an amber **Reminders** badge appears in the header and jumps to the daily schedule.
 
+![Medication and routine reminders](docs/screenshots/reminders.png)
+
 ### Backup & Restore
 **Export Backup** in the hamburger drawer downloads every routine, vital, care note, vault record, profile and preference as a single JSON file; **Import Backup** restores that file onto any device. Nothing is uploaded anywhere - the data never leaves the browser.
+
+![Backup and restore controls](docs/screenshots/backup-restore.png)
 
 ### Medical Vault
 Categorized, searchable archive of health reports, prescriptions, and insurance documents.
