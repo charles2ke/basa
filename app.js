@@ -592,6 +592,10 @@ function translateDocument() {
     nodes.forEach(node => {
         const parent = node.parentNode;
         if (!parent || skipTags.indexOf(parent.nodeName) !== -1) return;
+        // Reminder labels are already rendered in the active language by
+        // renderReminders(), so skip them here to avoid the walker treating
+        // translated text as the untranslated English "source".
+        if (parent.closest && parent.closest('[data-i18n-managed]')) return;
 
         if (!translationSources.has(node)) {
             if (!node.nodeValue || !node.nodeValue.trim()) return;
@@ -1304,6 +1308,7 @@ function renderReminders(now) {
     list.innerHTML = '';
     if (items.length === 0) {
         list.innerHTML = `<p class="text-xs text-gray-400 italic">Nothing due right now. All scheduled tasks are on track.</p>`;
+        delete counter.dataset.i18nManaged;
         counter.textContent = 'All clear';
         counter.className = "px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
     } else {
@@ -1318,10 +1323,12 @@ function renderReminders(now) {
             const title = document.createElement('span');
             title.className = `font-semibold ${overdue ? 'text-red-700' : 'text-amber-700'}`;
             title.textContent = `${item.time} - ${item.name}`;
+            title.dataset.i18nManaged = 'true';
 
             const delay = document.createElement('span');
             delay.className = `block text-[10px] ${overdue ? 'text-red-600' : 'text-amber-600'}`;
             delay.textContent = formatReminderDelay(item.minutesAway, dict);
+            delay.dataset.i18nManaged = 'true';
 
             info.appendChild(title);
             info.appendChild(delay);
@@ -1329,6 +1336,7 @@ function renderReminders(now) {
             const button = document.createElement('button');
             button.className = 'self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition shrink-0';
             button.textContent = tr('Mark Taken');
+            button.dataset.i18nManaged = 'true';
             button.addEventListener('click', () => toggleRoutineComplete(item.id));
 
             row.appendChild(info);
@@ -1336,12 +1344,14 @@ function renderReminders(now) {
             list.appendChild(row);
         });
         counter.textContent = `${reminders.overdue.length} ${tr('overdue')} / ${reminders.dueSoon.length} ${tr('due soon')}`;
+        counter.dataset.i18nManaged = 'true';
         counter.className = reminders.overdue.length > 0
             ? "px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[10px] font-bold uppercase tracking-wider"
             : "px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
     }
 
     if (badge && badgeText) {
+        badgeText.dataset.i18nManaged = 'true';
         if (reminders.overdue.length > 0) {
             badge.classList.remove('hidden');
             badge.classList.add('flex');
@@ -1426,11 +1436,11 @@ function exportBackup() {
 // Replace the in-memory state with a previously exported backup
 function applyBackup(backup) {
     if (!backup || typeof backup !== 'object' || backup.app !== 'basa'
-        || !backup.data || typeof backup.data !== 'object') {
+        || !backup.data || typeof backup.data !== 'object' || !Number.isInteger(backup.version)) {
         setBackupStatus('That file is not a valid basa backup.', 'error');
         return false;
     }
-    if (!Number.isInteger(backup.version) || backup.version > BACKUP_VERSION) {
+    if (backup.version > BACKUP_VERSION) {
         setBackupStatus('This backup was created by a newer version of basa. Update the app to import it.', 'error');
         return false;
     }
