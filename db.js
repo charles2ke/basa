@@ -162,6 +162,8 @@
          * Close the underlying PouchDB connection so IndexedDB deletion
          * requests (e.g. from tests wiping the database) are not blocked by
          * an open handle. Safe to call even when PouchDB was never opened.
+         * The connection is dropped (not just closed): any subsequent read
+         * or write lazily reopens a fresh PouchDB handle via getPouch().
          */
         close() {
             if (!pouch) return Promise.resolve();

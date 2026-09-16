@@ -1274,7 +1274,7 @@ function getDueReminders(now) {
 // the original English key when no translation exists (same convention as
 // the rest of the app's text-node translation walker).
 function translateReminderText(dict, key) {
-    return dict[key] || key;
+    return Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : key;
 }
 
 function formatReminderDelay(minutesAway, dict) {
