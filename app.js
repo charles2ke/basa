@@ -1293,15 +1293,28 @@ function renderReminders(now) {
             const overdue = item.minutesAway < 0;
             const row = document.createElement('div');
             row.className = `flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2.5 rounded-lg border text-xs ${overdue ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`;
-            row.innerHTML = `
-                <div class="min-w-0">
-                    <span class="font-semibold ${overdue ? 'text-red-700' : 'text-amber-700'}">${item.time} - ${item.name}</span>
-                    <span class="block text-[10px] ${overdue ? 'text-red-600' : 'text-amber-600'}">${formatReminderDelay(item.minutesAway)}</span>
-                </div>
-                <button onclick="toggleRoutineComplete(${item.id})" class="self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition shrink-0">
-                    Mark Taken
-                </button>
-            `;
+
+            const info = document.createElement('div');
+            info.className = 'min-w-0';
+
+            const title = document.createElement('span');
+            title.className = `font-semibold ${overdue ? 'text-red-700' : 'text-amber-700'}`;
+            title.textContent = `${item.time} - ${item.name}`;
+
+            const delay = document.createElement('span');
+            delay.className = `block text-[10px] ${overdue ? 'text-red-600' : 'text-amber-600'}`;
+            delay.textContent = formatReminderDelay(item.minutesAway);
+
+            info.appendChild(title);
+            info.appendChild(delay);
+
+            const button = document.createElement('button');
+            button.className = 'self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition shrink-0';
+            button.textContent = 'Mark Taken';
+            button.addEventListener('click', () => toggleRoutineComplete(item.id));
+
+            row.appendChild(info);
+            row.appendChild(button);
             list.appendChild(row);
         });
         counter.textContent = `${reminders.overdue.length} overdue / ${reminders.dueSoon.length} due soon`;
