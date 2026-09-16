@@ -1307,9 +1307,13 @@ function renderReminders(now) {
 
     list.innerHTML = '';
     if (items.length === 0) {
-        list.innerHTML = `<p class="text-xs text-gray-400 italic">Nothing due right now. All scheduled tasks are on track.</p>`;
-        delete counter.dataset.i18nManaged;
-        counter.textContent = 'All clear';
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-gray-400 italic';
+        empty.textContent = tr('Nothing due right now. All scheduled tasks are on track.');
+        empty.dataset.i18nManaged = 'true';
+        list.appendChild(empty);
+        counter.dataset.i18nManaged = 'true';
+        counter.textContent = tr('All clear');
         counter.className = "px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[10px] font-bold uppercase tracking-wider";
     } else {
         items.forEach(item => {
