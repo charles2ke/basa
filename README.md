@@ -24,26 +24,26 @@ IP-based country lookup used to show the correct local emergency numbers (see [P
 <!-- LIVE_DEMO_START -->
 🚀 **Live site:** https://charles2ke.github.io/basa/
 
-**Latest deployment run:** https://github.com/charles2ke/basa/actions/runs/35052144192
+**Latest deployment run:** https://github.com/charles2ke/basa/actions/runs/35666508086
 <!-- LIVE_DEMO_END -->
 
 ## CI/CD Status
 <!-- BUILD_STATUS_START -->
 ![Build Status](https://github.com/charles2ke/basa/actions/workflows/ci.yml/badge.svg)
 
-**Last Automated Update:** Wed, 16 Sep 2026 03:32:39 GMT
+**Last Automated Update:** Mon, 21 Sep 2026 23:14:39 GMT
 <!-- BUILD_STATUS_END -->
 
 ## Test Coverage Metrics
 <!-- COVERAGE_START -->
-![Coverage](https://img.shields.io/badge/Coverage-98.82%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-98.87%25-brightgreen)
 
 | Metric | Total | Covered | Percentage |
 | :--- | :---: | :---: | :---: |
-| **Lines** | 1445 | 1428 | 98.82% |
-| **Statements** | 1570 | 1526 | 97.19% |
-| **Functions** | 194 | 185 | 95.36% |
-| **Branches** | 739 | 643 | 87% |
+| **Lines** | 1507 | 1490 | 98.87% |
+| **Statements** | 1644 | 1598 | 97.2% |
+| **Functions** | 203 | 195 | 96.05% |
+| **Branches** | 780 | 676 | 86.66% |
 <!-- COVERAGE_END -->
 
 ## Quick Start
