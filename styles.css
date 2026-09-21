@@ -260,3 +260,134 @@ body.dark-mode .memory-card-back {
     color: #e2e8f0;
     border-color: #334155;
 }
+
+/* ---------------------------------------------------------------------
+ * Skip link
+ * Hidden until focused, so keyboard users can jump past the header and
+ * navigation drawer straight into the active tab.
+ * ------------------------------------------------------------------- */
+#skip-to-content {
+    position: absolute;
+    left: 0.5rem;
+    top: -4rem;
+    z-index: 80;
+    transition: top 0.2s ease-in-out;
+}
+#skip-to-content:focus {
+    top: 0.5rem;
+}
+#main-content:focus {
+    outline: none;
+}
+
+/* Clear keyboard focus ring on every interactive control */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid #4f46e5; /* indigo-600 */
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}
+body.dark-mode a:focus-visible,
+body.dark-mode button:focus-visible,
+body.dark-mode input:focus-visible,
+body.dark-mode select:focus-visible,
+body.dark-mode textarea:focus-visible,
+body.dark-mode [tabindex]:focus-visible {
+    outline-color: #a5b4fc; /* indigo-300 */
+}
+
+/* ---------------------------------------------------------------------
+ * Toast notifications
+ * Short, non-blocking confirmations shown in the bottom corner instead of
+ * blocking alert() dialogs.
+ * ------------------------------------------------------------------- */
+.toast {
+    pointer-events: auto;
+    max-width: min(22rem, calc(100vw - 2rem));
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background-color: #ffffff;
+    color: #111827;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.toast.toast-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.toast-success {
+    border-color: #a7f3d0; /* green-200 */
+    background-color: #ecfdf5; /* green-50 */
+    color: #065f46; /* green-800 */
+}
+.toast-error {
+    border-color: #fecaca; /* red-200 */
+    background-color: #fef2f2; /* red-50 */
+    color: #991b1b; /* red-800 */
+}
+.toast-info {
+    border-color: #c7d2fe; /* indigo-200 */
+    background-color: #eef2ff; /* indigo-50 */
+    color: #3730a3; /* indigo-800 */
+}
+.toast-close {
+    margin-left: auto;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.6;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: inherit;
+}
+.toast-close:hover {
+    opacity: 1;
+}
+body.dark-mode .toast {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .toast-success {
+    background-color: #064e3b;
+    border-color: #047857;
+    color: #d1fae5;
+}
+body.dark-mode .toast-error {
+    background-color: #7f1d1d;
+    border-color: #b91c1c;
+    color: #fee2e2;
+}
+body.dark-mode .toast-info {
+    background-color: #312e81;
+    border-color: #4338ca;
+    color: #e0e7ff;
+}
+
+/* ---------------------------------------------------------------------
+ * Reduced motion
+ * The dashboard uses bouncing and pulsing attention cues; honour the
+ * operating system preference and hold them still instead.
+ * ------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}

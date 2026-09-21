@@ -295,6 +295,7 @@ function init() {
             closeNav();
         }
     });
+    document.addEventListener('keydown', handleNavFocusTrap);
 
     // View selector toggle listeners
     document.getElementById('btn-view-child').addEventListener('click', () => setViewMode('child'));
@@ -494,6 +495,62 @@ function setViewMode(mode) {
     saveState();
 }
 
+// --- Toast notifications -------------------------------------------------
+// Short confirmations shown in the corner of the screen. They replace
+// blocking alert() dialogs so the dashboard keeps updating behind them, and
+// the container is an aria-live region so screen readers announce them too.
+
+const TOAST_DURATION = 4000;
+
+function dismissToast(toast) {
+    if (!toast || !toast.parentNode) return;
+    toast.classList.remove('toast-visible');
+    const remove = () => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    };
+    // Let the fade-out play, but never leave the node behind if it does not.
+    setTimeout(remove, 200);
+}
+
+function showToast(message, tone) {
+    const container = document.getElementById('toast-container');
+    if (!container || !message) return null;
+
+    const type = ['success', 'error', 'info'].indexOf(tone) !== -1 ? tone : 'info';
+    const icons = { success: '✅', error: '⚠️', info: 'ℹ️' };
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = icons[type];
+
+    const text = document.createElement('span');
+    text.className = 'toast-message';
+    // Look up the phrase in the active language dictionary, falling back to
+    // the original English wording (same convention as the reminder labels).
+    text.textContent = translateReminderText(languageDictionary(state.language), message);
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'toast-close';
+    close.setAttribute('aria-label', 'Dismiss notification');
+    close.textContent = '×';
+    close.addEventListener('click', () => dismissToast(toast));
+
+    toast.appendChild(icon);
+    toast.appendChild(text);
+    toast.appendChild(close);
+    container.appendChild(toast);
+
+    // Trigger the fade-in on the next frame so the transition runs.
+    setTimeout(() => toast.classList.add('toast-visible'), 10);
+    setTimeout(() => dismissToast(toast), TOAST_DURATION);
+
+    return toast;
+}
+
 // --- Hamburger navigation drawer ----------------------------------------
 
 // Open or close the main navigation drawer
@@ -509,21 +566,57 @@ function closeNav() {
     setNavOpen(false);
 }
 
+// Every control inside the drawer that can currently receive focus
+function navFocusableElements() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return [];
+    return Array.prototype.slice.call(
+        sidebar.querySelectorAll('button, a[href], select, input, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter(el => !el.disabled && el.getAttribute('aria-hidden') !== 'true');
+}
+
+// Keep Tab / Shift+Tab inside the open drawer so keyboard users cannot land
+// on the page behind the backdrop.
+function handleNavFocusTrap(e) {
+    if (e.key !== 'Tab' || !state.navOpen) return;
+    const focusable = navFocusableElements();
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+
+    if (e.shiftKey && (active === first || !document.getElementById('sidebar').contains(active))) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+    }
+}
+
 function setNavOpen(open) {
     state.navOpen = open;
     const overlay = document.getElementById('nav-overlay');
     const trigger = document.getElementById('btn-hamburger');
+    const sidebar = document.getElementById('sidebar');
 
     if (open) {
         document.body.classList.add('nav-open');
         overlay.classList.remove('hidden');
         trigger.setAttribute('aria-expanded', 'true');
+        if (sidebar) sidebar.setAttribute('aria-modal', 'true');
         const firstTab = document.querySelector('#main-nav .tab-btn');
         if (firstTab) firstTab.focus();
     } else {
+        const focusWasInDrawer = sidebar && sidebar.contains(document.activeElement);
         document.body.classList.remove('nav-open');
         overlay.classList.add('hidden');
         trigger.setAttribute('aria-expanded', 'false');
+        if (sidebar) sidebar.setAttribute('aria-modal', 'false');
+        // Send focus back to the hamburger button instead of losing it on a
+        // control that is now hidden off-canvas.
+        if (focusWasInDrawer && typeof trigger.focus === 'function') trigger.focus();
     }
 }
 
@@ -1203,6 +1296,8 @@ function handleAddRoutine(e) {
     document.getElementById('routine-name').value = '';
     document.getElementById('routine-time').value = '';
     document.getElementById('routine-dosage').value = '';
+
+    showToast(`Added "${name}" to the daily schedule.`, 'success');
 }
 
 // Complete Daily Routine Action
@@ -1410,6 +1505,8 @@ function setBackupStatus(message, tone) {
     if (!el) return;
     el.textContent = message;
     el.className = `text-[10px] ${tone === 'error' ? 'text-red-600' : (tone === 'success' ? 'text-green-600' : 'text-gray-500')}`;
+    // The drawer status line is easy to miss, so mirror it as a toast.
+    showToast(message, tone);
 }
 
 // Download the backup as a timestamped JSON file
@@ -1573,6 +1670,8 @@ function handleAddVital(e) {
     updateUI();
     renderVitalsChart('bp'); // reload active vitals tab graph
 
+    showToast("Today's vitals reading was saved.", 'success');
+
     // Reset inputs
     document.getElementById('vital-systolic').value = '';
     document.getElementById('vital-diastolic').value = '';
@@ -1655,6 +1754,7 @@ function syncWearables() {
 
     if (connected.length === 0) {
         if (statusEl) statusEl.textContent = 'Connect Google Fit, Garmin or Whoop first, then sync.';
+        showToast('Connect Google Fit, Garmin or Whoop first, then sync.', 'error');
         return 0;
     }
 
@@ -1698,6 +1798,7 @@ function syncWearables() {
     saveState();
     updateUI();
     renderVitalsChart('bp');
+    showToast(`Synced ${metrics.length} vital metric(s) from ${entry.source}.`, 'success');
     return connected.length;
 }
 
@@ -1772,6 +1873,8 @@ function handleAddEvent(e) {
 
     document.getElementById('event-name').value = '';
     document.getElementById('event-date').value = '';
+
+    showToast(`Appointment "${name}" added to the care calendar.`, 'success');
 }
 
 // Handle adding Note comments to caregiver stream
@@ -1792,6 +1895,8 @@ function handleAddNote(e) {
     updateUI();
 
     document.getElementById('note-text').value = '';
+
+    showToast('Your update was shared with the care circle.', 'success');
 }
 
 // Handle uploading mock files inside Medical Vault
@@ -1817,6 +1922,8 @@ function handleVaultUpload(e) {
     document.getElementById('vault-title').value = '';
     document.getElementById('vault-file-input').value = '';
     document.getElementById('vault-file-label').textContent = "Click to select record (PDF/Img)";
+
+    showToast(`"${title}" was saved to the medical vault.`, 'success');
 }
 
 // Geofence radius changed slider handler
@@ -2279,7 +2386,7 @@ function handleMemoryFlip(id) {
                 });
                 
                 setTimeout(() => {
-                    alert(`Fantastic job, Dad! You completed the memory challenge successfully in ${timeDiff} seconds!`);
+                    showToast(`Fantastic job! You completed the memory challenge in ${timeDiff} seconds.`, 'success');
                     saveState();
                     updateUI();
                 }, 500);
@@ -2703,7 +2810,7 @@ function updateUI() {
             
             // Preview card alerts on click
             item.addEventListener('click', () => {
-                alert(`Decrypted Record: "${d.title}"\nCategory: ${d.category}\nUploaded on: ${d.date}\nSecure Vault status: Encrypted (Local persistent simulation)`);
+                showToast(`Decrypted "${d.title}" (${d.category}, uploaded ${d.date}) - still encrypted on this device.`, 'info');
             });
 
             vaultGrid.appendChild(item);
@@ -2856,6 +2963,7 @@ if (typeof window !== 'undefined') {
     window.parseRoutineTime = parseRoutineTime;
     window.buildBackup = buildBackup;
     window.exportBackup = exportBackup;
+    window.showToast = showToast;
     window.applyBackup = applyBackup;
     window.importBackupFile = importBackupFile;
     window.WEARABLE_PROVIDERS = WEARABLE_PROVIDERS;
