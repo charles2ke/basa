@@ -1,5 +1,24 @@
 # Basa
-Home, Ghar, Bari - Elder Care Circle Dashboard.
+
+**Home, Ghar, Bari** - an elder care circle dashboard for families looking after an ageing parent.
+
+Basa is a single-page, offline-first web app: no server, no account and care records stay on the
+device. Open `index.html` (or the live demo) and everything - routines, vitals, care notes, vault
+records and profiles - is stored locally in the browser. The only exception is an outbound
+IP-based country lookup used to show the correct local emergency numbers (see [Privacy](#privacy)).
+
+## Contents
+
+- [Live Demo](#live-demo)
+- [Quick Start](#quick-start)
+- [Everyday Use](#everyday-use)
+- [Accessibility & Keyboard](#accessibility--keyboard)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Testing](#testing)
+- [Data Storage](#data-storage)
+- [Privacy](#privacy)
+- [Screenshots](#screenshots)
 
 ## Live Demo
 <!-- LIVE_DEMO_START -->
@@ -27,6 +46,51 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 | **Branches** | 739 | 643 | 87% |
 <!-- COVERAGE_END -->
 
+## Quick Start
+
+No build step is required - the app is plain HTML, CSS and JavaScript.
+
+```bash
+git clone https://github.com/charles2ke/basa.git
+cd basa
+npm install          # only needed for the test tooling
+npm run serve        # serves the app on http://localhost:8080
+```
+
+Then open <http://localhost:8080> in a modern browser (Chrome, Edge, Firefox or Safari).
+Opening `index.html` directly from disk also works, although the offline PouchDB store is more
+reliable when the page is served over `http://`.
+
+**Requirements:** Node.js 20+ is only needed for `npm run serve` and the test suites; the app
+itself needs nothing but a browser.
+
+## Everyday Use
+
+1. **Set up profiles first.** Open the hamburger drawer and fill in *Parent Setup* and
+   *Child / Caregiver Setup*. Several parents and several caregivers can be added and switched
+   between.
+2. **Add routines and medication** on the *Medication & Routines* tab; overdue or imminent items
+   surface at the top of the dashboard and in the amber header badge.
+3. **Log vitals** manually or connect Google Fit, Garmin or Whoop and press **Sync Now**.
+4. **Switch to Parent View** (header toggle) for the larger, elderly-friendly layout.
+5. **Export a backup** from the drawer before switching devices or clearing browser data.
+
+Every action now confirms itself with a small toast in the corner of the screen rather than a
+blocking pop-up dialog.
+
+## Accessibility & Keyboard
+
+- **Skip link:** press `Tab` on load to reveal *Skip to main content* and jump past the header.
+- **Navigation drawer:** the hamburger drawer traps `Tab` / `Shift+Tab` while open, closes on
+  `Esc` or a backdrop click, and returns focus to the hamburger button afterwards.
+- **Focus rings:** every button, link and field shows a high-contrast indigo focus outline when
+  reached with the keyboard.
+- **Announcements:** toasts render inside an `aria-live` region so screen readers read them out.
+- **Reduced motion:** the bouncing SOS button and pulsing badges stop animating when the
+  operating system requests reduced motion.
+- **Parent View:** larger type, bigger touch targets and simplified controls for the parent.
+- **Languages & theme:** English, Hindi and Bengali plus light/dark mode, remembered per device.
+
 ## Features
 - **Smart Ambient Telemetry**: Real-time monitoring of motion sensors, temperature, and environmental status.
 - **Geofencing & Alerts**: Safe boundaries visual tracking with automated alerts.
@@ -44,9 +108,42 @@ Home, Ghar, Bari - Elder Care Circle Dashboard.
 - **Local Emergency Numbers**: Police, ambulance and fire numbers resolved from the visitor's IP location, with a manual country override. Each card is a `tel:` link, so tapping one opens the phone dialler on mobile.
 - **Offline NoSQL Storage**: All data is stored on-device in [PouchDB](https://pouchdb.com/), a free and open source NoSQL document database backed by IndexedDB.
 - **Mobile Friendly**: Fully responsive layout with stacked cards and touch-friendly controls.
+- **Toast Confirmations**: Saving a routine, vital, note, vault record or backup confirms with a dismissible toast in an `aria-live` region instead of a blocking dialog.
+- **Keyboard & Screen Reader Friendly**: Skip-to-content link, focus-trapped navigation drawer, visible focus rings and `prefers-reduced-motion` support.
+
+## Project Structure
+
+| Path | Purpose |
+| :--- | :--- |
+| `index.html` | Entire markup: header, navigation drawer and every tab panel. |
+| `app.js` | Application state, rendering and all interaction handlers. |
+| `db.js` | `BasaDB` persistence wrapper (PouchDB + `localStorage` mirror). |
+| `i18n.js` | English / Hindi / Bengali dictionaries keyed by the English phrase. |
+| `styles.css` | Custom styles on top of Tailwind: drawer, toasts, dark mode, parent view. |
+| `tests/unit` | Jest + JSDOM unit tests for `app.js` and `db.js`. |
+| `tests/e2e` | Playwright end-to-end and responsive layout tests. |
+| `scripts/update-readme.js` | CI helper that refreshes the badges and metrics above. |
+
+## Testing
+
+```bash
+npm test             # Jest unit tests (JSDOM)
+npm run test:coverage  # unit tests with a coverage report in coverage/
+npm run test:e2e     # Playwright end-to-end tests (starts the dev server automatically)
+```
+
+Playwright browsers are installed once with `npx playwright install --with-deps chromium`.
+The GitHub Actions pipeline runs the unit tests with coverage, deploys to GitHub Pages and
+rewrites the badge sections of this file.
 
 ## Data Storage
 State is persisted through `db.js`, a thin wrapper around PouchDB (Apache-2.0, vendored in `vendor/pouchdb.min.js`). Each collection - routines, vitals, care events, notes, vault documents, geofence settings, parent/child profile lists and the detected emergency location - is stored as its own document. A synchronous `localStorage` mirror keeps the first paint instant and acts as a fallback when IndexedDB is unavailable; per-key write timestamps prevent an older database document from overwriting a newer local write.
+
+## Privacy
+
+Basa has no backend. Records live in the browser's IndexedDB (with a `localStorage` mirror) and
+are only shared when *you* export a backup file. The only outbound request is an IP-based country
+lookup used to show the correct local emergency numbers, and that can be overridden manually.
 
 ## Screenshots
 
@@ -79,6 +176,15 @@ Pending routines that are overdue or due within the next hour are surfaced at th
 **Export Backup** in the hamburger drawer downloads every routine, vital, care note, vault record, profile and preference as a single JSON file; **Import Backup** restores that file onto any device. Nothing is uploaded anywhere - the data never leaves the browser.
 
 ![Backup and restore controls](docs/screenshots/backup-restore.png)
+
+### Toast Confirmations & Skip Link
+Saving a routine, vital, care note, vault record or backup confirms with a dismissible toast in the
+corner of the screen (announced through an `aria-live` region) instead of a blocking dialog. Pressing
+`Tab` on load reveals the *Skip to main content* link.
+
+| Toast confirmation | Skip to main content |
+| :---: | :---: |
+| ![Toast confirmation](docs/screenshots/toast-notification.png) | ![Skip link](docs/screenshots/skip-link.png) |
 
 ### Medical Vault
 Categorized, searchable archive of health reports, prescriptions, and insurance documents.

@@ -577,9 +577,9 @@ describe('Basa Dashboard Unit Tests', () => {
     });
 
     expect(window.state.game.matches).toBe(6);
-    // Fast-forward alert timeout
+    // Fast-forward the celebration toast timeout
     jest.advanceTimersByTime(500);
-    expect(window.alert).toHaveBeenCalled();
+    expect(document.getElementById('toast-container').textContent).toContain('memory challenge');
   });
 
   test('vitals trend SVG rendering for different types and empty state', () => {
@@ -686,7 +686,7 @@ describe('Basa Dashboard Unit Tests', () => {
     const vaultCards = document.querySelectorAll('#vault-grid > div');
     expect(vaultCards.length).toBe(2);
     vaultCards[0].dispatchEvent(new Event('click'));
-    expect(window.alert).toHaveBeenCalled();
+    expect(document.getElementById('toast-container').textContent).toContain('Test Doc');
 
     // 7. Non-existent routine toggle
     window.toggleRoutineComplete(9999);
@@ -755,6 +755,83 @@ describe('Basa Dashboard Unit Tests', () => {
     document.querySelector("button[data-tab='vault']").dispatchEvent(new Event('click'));
     expect(window.state.activeTab).toBe('vault');
     expect(document.body.classList.contains('nav-open')).toBe(false);
+  });
+
+  test('navigation drawer keeps keyboard focus inside and restores it on close', () => {
+    require('../../app.js');
+
+    const hamburger = document.getElementById('btn-hamburger');
+    const sidebar = document.getElementById('sidebar');
+
+    window.openNav();
+    expect(sidebar.getAttribute('aria-modal')).toBe('true');
+    // Focus moves into the drawer when it opens
+    expect(sidebar.contains(document.activeElement)).toBe(true);
+
+    const focusable = Array.from(sidebar.querySelectorAll(
+      'button, a[href], select, input, textarea, [tabindex]:not([tabindex="-1"])'
+    ));
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    // Tab from the last control wraps back to the first
+    last.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(first);
+
+    // Shift+Tab from the first control wraps to the last
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(last);
+
+    // Other keys are ignored by the trap
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+    expect(document.activeElement).toBe(last);
+
+    // Closing returns focus to the hamburger trigger
+    window.closeNav();
+    expect(sidebar.getAttribute('aria-modal')).toBe('false');
+    expect(document.activeElement).toBe(hamburger);
+
+    // The trap does nothing while the drawer is closed
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(hamburger);
+  });
+
+  test('toasts announce actions, auto-dismiss and can be closed manually', () => {
+    jest.useFakeTimers();
+    require('../../app.js');
+
+    const container = document.getElementById('toast-container');
+
+    // Adding a routine confirms with a success toast
+    document.getElementById('routine-name').value = 'Evening walk';
+    document.getElementById('routine-time').value = '18:00';
+    document.getElementById('routine-form').dispatchEvent(new Event('submit'));
+    jest.advanceTimersByTime(20);
+
+    const toast = container.querySelector('.toast');
+    expect(toast).not.toBeNull();
+    expect(toast.classList.contains('toast-success')).toBe(true);
+    expect(toast.textContent).toContain('Evening walk');
+    expect(toast.classList.contains('toast-visible')).toBe(true);
+
+    // It disappears on its own
+    jest.advanceTimersByTime(5000);
+    expect(container.querySelectorAll('.toast').length).toBe(0);
+
+    // Unknown tones fall back to the neutral info style and can be dismissed
+    window.showToast('Manual message', 'nonsense');
+    jest.advanceTimersByTime(20);
+    const infoToast = container.querySelector('.toast');
+    expect(infoToast.classList.contains('toast-info')).toBe(true);
+    infoToast.querySelector('.toast-close').dispatchEvent(new Event('click'));
+    jest.advanceTimersByTime(300);
+    expect(container.querySelectorAll('.toast').length).toBe(0);
+
+    // Empty messages are ignored
+    expect(window.showToast('')).toBeNull();
+
+    jest.useRealTimers();
   });
 
   test('parent setup page saves, persists and re-renders the profile', () => {
