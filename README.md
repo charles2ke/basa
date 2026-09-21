@@ -2,9 +2,10 @@
 
 **Home, Ghar, Bari** - an elder care circle dashboard for families looking after an ageing parent.
 
-Basa is a single-page, offline-first web app: no server, no account and no data ever leaves the
+Basa is a single-page, offline-first web app: no server, no account and care records stay on the
 device. Open `index.html` (or the live demo) and everything - routines, vitals, care notes, vault
-records and profiles - is stored locally in the browser.
+records and profiles - is stored locally in the browser. The only exception is an outbound
+IP-based country lookup used to show the correct local emergency numbers (see [Privacy](#privacy)).
 
 ## Contents
 
